@@ -1,8 +1,5 @@
-{ pkgs, inputs, ... }:
+{ pkgs, ... }:
 {
-
-  imports = [ inputs.impermanence.nixosModules.impermanence ];
-
   programs.bash.enable = true;
   security.sudo.wheelNeedsPassword = false;
   security.sudo.execWheelOnly = true;
@@ -175,9 +172,9 @@
     services.systemd-resolved.stopIfChanged = false;
 
     enableEmergencyMode = false;
-    watchdog = {
-      runtimeTime = "20s";
-      rebootTime = "30s";
+    settings.Manager = {
+      RuntimeWatchdogSec = "20s";
+      RebootWatchdogSec = "30s";
     };
 
     targets = {

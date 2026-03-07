@@ -7,10 +7,8 @@
     # darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.05";
     # darwin.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    # home-manager.url = "github:nix-community/home-manager/release-25.05";
-    # home-manager.inputs.nixpkgs.follows = "nixpkgs-stable";
-
-    # impermanence.url = "github:nix-community/impermanence";
+    home.url = "github:tcurdt/nix-home";
+    home.inputs.nixpkgs.follows = "nixpkgs-stable";
 
     comin.url = "github:nlewo/comin";
     comin.inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -35,9 +33,6 @@
     {
       # self,
       nixpkgs-stable,
-      # home-manager,
-      # impermanence,
-      darwin,
       comin,
       # deploy-rs,
       ...
@@ -63,7 +58,9 @@
       #   };
       # };
 
-      packages = forAllSystems (system: import ./packages nixpkgs-stable.legacyPackages.${system});
+      packages = forAllSystems (
+        system: import ./packages { pkgs = nixpkgs-stable.legacyPackages.${system}; }
+      );
       # formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra)
 
       # overlays = import ./overlays { inherit inputs; };
@@ -74,14 +71,20 @@
           specialArgs = {
             inherit inputs;
           };
-          modules = [ ./machines/utm-arm.nix ];
+          modules = [
+            inputs.home.nixosModules.default
+            ./machines/utm-arm.nix
+          ];
         };
 
         utm-x86 = nixpkgs-stable.lib.nixosSystem {
           specialArgs = {
             inherit inputs;
           };
-          modules = [ ./machines/utm-x86.nix ];
+          modules = [
+            inputs.home.nixosModules.default
+            ./machines/utm-x86.nix
+          ];
         };
 
         app = nixpkgs-stable.lib.nixosSystem {
@@ -89,6 +92,7 @@
             inherit inputs;
           };
           modules = [
+            inputs.home.nixosModules.default
             ./machines/app.nix
             comin.nixosModules.comin
             (import ./modules/comin.nix)

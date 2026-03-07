@@ -6,12 +6,8 @@
   ...
 }:
 let
-
   inherit (lib) mkOption;
-  # inherit (lib.types) listOf str;
-
   cfg = config.ops;
-
 in
 {
 
@@ -20,24 +16,12 @@ in
       keyFiles = mkOption {
         default = [ ];
         description = "...";
-        # type = listOf str; # or whatever type these actually are
-      };
-      home-manager = mkOption {
-        default = ../home/tcurdt.nix;
-        description = "...";
       };
     };
   };
 
-  imports = [ inputs.home-manager.nixosModules.default ];
-
   config = {
-
-    # Optimize Home Manager
-    home-manager.useGlobalPkgs = true;
-    home-manager.useUserPackages = true;
-
-    users.users.ops = (import ./default.nix pkgs) // {
+    users.users.ops = (import ./default.nix { inherit pkgs; }) // {
 
       openssh.authorizedKeys.keyFiles = cfg.keyFiles;
 
@@ -50,11 +34,10 @@ in
 
     };
 
-    home-manager.users.ops = (import cfg.home-manager pkgs) // {
-      # home.shellAliases = {
-      #   foo = "eza";
-      # };
-      # home.stateVersion = "23.11";
+    home-manager.users.ops = {
+      imports = [ inputs.home.homeManagerModules.tcurdt ];
+      home.username = "ops";
+      home.homeDirectory = "/home/ops";
     };
   };
 }

@@ -5,10 +5,7 @@
   ...
 }:
 {
-
-  imports = [ inputs.home-manager.nixosModules.default ];
-
-  users.users.tcurdt = (import ./default.nix pkgs) // {
+  users.users.tcurdt = (import ./default.nix { inherit pkgs; }) // {
 
     openssh.authorizedKeys.keyFiles = [ ../keys/tcurdt.pub ];
 
@@ -21,6 +18,10 @@
 
   };
 
-  home-manager.users.tcurdt = (import ../home/tcurdt.nix pkgs) // { };
+  home-manager.users.tcurdt = {
+    imports = [ inputs.home.homeManagerModules.tcurdt ];
+    home.username = "tcurdt";
+    home.homeDirectory = "/home/tcurdt";
+  };
 
 }
