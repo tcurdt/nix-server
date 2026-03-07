@@ -62,4 +62,13 @@
       }
     '';
   };
+
+  systemd.tmpfiles.rules = [
+    "d /var/lib/nginx 0750 nginx nginx -"
+    "d /var/lib/nginx/acme 0700 nginx nginx -"
+  ];
+
+  systemd.services.nginx.serviceConfig.ReadWritePaths = [
+    "/var/lib/nginx"
+  ];
 }
