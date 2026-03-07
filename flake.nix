@@ -4,24 +4,11 @@
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.11";
     # nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    # darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.05";
-    # darwin.inputs.nixpkgs.follows = "nixpkgs-stable";
-
     home.url = "github:tcurdt/nix-home";
     home.inputs.nixpkgs.follows = "nixpkgs-stable";
 
     comin.url = "github:nlewo/comin";
     comin.inputs.nixpkgs.follows = "nixpkgs-stable";
-
-    # deploy-rs.url = "github:serokell/deploy-rs";
-    # deploy-rs.inputs.nixpkgs.follows = "nixpkgs-stable";
-
-    # nixos-generators.url = "github:nix-community/nixos-generators";
-    # nixos-generators.inputs.nixpkgs.follows = "nixpkgs-stable";
-
-    # agenix.url = "github:ryantm/agenix";
-    # agenix.inputs.nixpkgs.follows = "nixpkgs-stable";
-    # agenix.inputs.darwin.follows = "";
 
     # release-go.url = "github:tcurdt/release-go";
     # release-go.inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -31,10 +18,8 @@
 
   outputs =
     {
-      # self,
       nixpkgs-stable,
       comin,
-      # deploy-rs,
       ...
     }@inputs:
     let
@@ -48,15 +33,6 @@
       forAllSystems = nixpkgs-stable.lib.genAttrs systems;
     in
     {
-
-      # darwinConfigurations = {
-      #   shodan = darwin.lib.darwinSystem {
-      #     specialArgs = {
-      #       inherit inputs;
-      #     };
-      #     modules = [ ./machines/shodan.nix ];
-      #   };
-      # };
 
       packages = forAllSystems (
         system: import ./packages { pkgs = nixpkgs-stable.legacyPackages.${system}; }
