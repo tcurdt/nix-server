@@ -4,6 +4,11 @@
 }:
 {
   # mhttps://ip66.dev/
+
+  environment.systemPackages = [
+    pkgs.mmdbinspect
+  ];
+
   systemd.services.mmdb-fetch = {
     description = "download mmdb if missing or older than 5 days";
     serviceConfig.Type = "oneshot";
@@ -13,7 +18,6 @@
       coreutils
       curl
       findutils
-      mmdbinspect
     ];
 
     script = ''
