@@ -9,6 +9,7 @@
 
     ../hardware/utm-x86.nix
     ../modules/server.nix
+    ../modules/mmdb.nix
 
     ../users/root.nix
     ../users/ops.nix
@@ -25,7 +26,7 @@
   ];
 
   networking.firewall.allowedTCPPorts = [
-    53
+    # 53
     80
     443
   ];
@@ -35,32 +36,27 @@
     enable = true;
     package = pkgs.angieWithAcme;
     virtualHosts = { };
-    appendHttpConfig = ''
-      resolver 1.1.1.1 8.8.8.8;
-
-      acme_client vafer_work https://acme-staging-v02.api.letsencrypt.org/directory challenge=dns;
-      acme_dns_port 53;
-
-      server {
-          listen 80;
-          server_name test.vafer.work *.branch.vafer.work;
-          return 301 https://$host$request_uri;
-      }
-
-      server {
-          listen 443 ssl;
-          server_name test.vafer.work *.branch.vafer.work;
-
-          acme vafer_work;
-          ssl_certificate $acme_cert_vafer_work;
-          ssl_certificate_key $acme_cert_key_vafer_work;
-
-          location / {
-              default_type text/plain;
-              return 200 "hello\n";
-          }
-      }
-    '';
+    # appendHttpConfig = ''
+    #   resolver 1.1.1.1 8.8.8.8;
+    #   acme_client vafer_work https://acme-staging-v02.api.letsencrypt.org/directory challenge=dns;
+    #   acme_dns_port 53;
+    #   server {
+    #       listen 80;
+    #       server_name test.vafer.work *.branch.vafer.work;
+    #       return 301 https://$host$request_uri;
+    #   }
+    #   server {
+    #       listen 443 ssl;
+    #       server_name test.vafer.work *.branch.vafer.work;
+    #       acme vafer_work;
+    #       ssl_certificate $acme_cert_vafer_work;
+    #       ssl_certificate_key $acme_cert_key_vafer_work;
+    #       location / {
+    #           default_type text/plain;
+    #           return 200 "hello\n";
+    #       }
+    #   }
+    # '';
   };
 
   systemd.tmpfiles.rules = [
