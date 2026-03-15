@@ -32,31 +32,38 @@
   ];
   networking.firewall.allowedUDPPorts = [ 53 ];
 
+  services.pocket-id = {
+    enable = true;
+    settings = {
+      APP_URL = "https://id.vafer.work";
+      TRUST_PROXY = true;
+      PORT = 8201;
+    };
+  };
+
   services.nginx = {
     enable = true;
     package = pkgs.angieWithAcme;
-    virtualHosts = { };
     # appendHttpConfig = ''
     #   resolver 1.1.1.1 8.8.8.8;
-    #   acme_client vafer_work https://acme-staging-v02.api.letsencrypt.org/directory challenge=dns;
-    #   acme_dns_port 53;
-    #   server {
-    #       listen 80;
-    #       server_name test.vafer.work *.branch.vafer.work;
-    #       return 301 https://$host$request_uri;
-    #   }
-    #   server {
-    #       listen 443 ssl;
-    #       server_name test.vafer.work *.branch.vafer.work;
-    #       acme vafer_work;
-    #       ssl_certificate $acme_cert_vafer_work;
-    #       ssl_certificate_key $acme_cert_key_vafer_work;
-    #       location / {
-    #           default_type text/plain;
-    #           return 200 "hello\n";
-    #       }
-    #   }
+    #   acme_client vafer_work https://acme-staging-v02.api.letsencrypt.org/directory challenge=http;
     # '';
+    virtualHosts = {
+      "id.vafer.work" = {
+        # forceSSL = true;
+        # sslCertificate = "/var/lib/nginx/selfsigned.crt";
+        # sslCertificateKey = "/var/lib/nginx/selfsigned.key";
+        # extraConfig = ''
+        #   acme vafer_work;
+        #   ssl_certificate $acme_cert_vafer_work;
+        #   ssl_certificate_key $acme_cert_key_vafer_work;
+        # '';
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:8201";
+          proxyWebsockets = true;
+        };
+      };
+    };
   };
 
   systemd.tmpfiles.rules = [
