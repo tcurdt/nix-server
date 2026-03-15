@@ -17,6 +17,8 @@
 
     { users.users.root.password = "secret"; }
 
+    ../modules/nginx-selfsigned.nix
+
   ];
 
   nixpkgs.overlays = [
@@ -50,9 +52,9 @@
     # '';
     virtualHosts = {
       "id.vafer.work" = {
-        # forceSSL = true;
-        # sslCertificate = "/var/lib/nginx/selfsigned.crt";
-        # sslCertificateKey = "/var/lib/nginx/selfsigned.key";
+        forceSSL = true;
+        sslCertificate = "/var/lib/nginx/id.vafer.work.crt";
+        sslCertificateKey = "/var/lib/nginx/id.vafer.work.key";
         # extraConfig = ''
         #   acme vafer_work;
         #   ssl_certificate $acme_cert_vafer_work;
@@ -71,7 +73,7 @@
     "d /var/lib/nginx/acme 0700 nginx nginx -"
   ];
 
-  systemd.services.nginx.serviceConfig.ReadWritePaths = [
-    "/var/lib/nginx"
-  ];
+  services.nginx-selfsigned.domains = [ "id.vafer.work" ];
+
+  systemd.services.nginx.serviceConfig.ReadWritePaths = [ "/var/lib/nginx" ];
 }
