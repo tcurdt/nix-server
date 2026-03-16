@@ -34,18 +34,20 @@ in
     services.my.formcha.url = "http://unix:${socketPath}:";
 
     systemd.sockets.formcha = {
-      description = "formcha ALTCHA server socket";
+      description = "formcha server socket";
       wantedBy = [ "sockets.target" ];
       socketConfig = {
         ListenStream = socketPath;
         SocketMode = "0660";
         SocketGroup = "nginx";
         StopWhenUnneeded = true;
+        # Backlog=4096;
+        # Accept=no;
       };
     };
 
     systemd.services.formcha = {
-      description = "formcha ALTCHA server";
+      description = "formcha server";
       serviceConfig = {
         ExecStart = "${package}/bin/formcha";
         EnvironmentFile = cfg.envFile;
@@ -53,6 +55,8 @@ in
         RuntimeDirectory = "formcha";
         RuntimeDirectoryMode = "0750";
         TimeoutIdleSec = 15;
+        # KillSignal=SIGTERM;
+        # Restart=on-failure;
       };
     };
 

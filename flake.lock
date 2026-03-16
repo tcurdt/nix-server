@@ -64,17 +64,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1773696974,
-        "narHash": "sha256-Xorcmi4yOisI25SaN/ULtKBHT6J6QWW3AsCuUUS0Kbo=",
-        "ref": "refs/heads/main",
-        "rev": "843ba470a998385e1e893ac7e552f140dca606c9",
-        "revCount": 2,
-        "type": "git",
-        "url": "file:///Users/tcurdt/Projects/formcha"
+        "lastModified": 1773700107,
+        "narHash": "sha256-uBB+5GDTnmy7IE67fUb3aWmP90jo+W3UlEZV5gIpq9I=",
+        "owner": "tcurdt",
+        "repo": "formcha",
+        "rev": "ed13ee6145baf251539c7696bef45c7d4ecb3a78",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///Users/tcurdt/Projects/formcha"
+        "owner": "tcurdt",
+        "repo": "formcha",
+        "type": "github"
       }
     },
     "home": {

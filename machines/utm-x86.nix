@@ -30,7 +30,7 @@
 
   services.my.authelia = {
     domain = "vafer.work";
-    authelia_url = "https://id.vafer.work";
+    external_url = "https://id.vafer.work";
   };
 
   services.my.formcha = {

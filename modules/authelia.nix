@@ -17,7 +17,7 @@ in
       description = "The root domain protected by Authelia (e.g. \"vafer.work\").";
     };
 
-    authelia_url = lib.mkOption {
+    external_url = lib.mkOption {
       type = lib.types.str;
       default = "";
       description = "The full URL of the Authelia instance (e.g. \"https://id.vafer.work\").";
@@ -59,7 +59,7 @@ in
         session.cookies = [
           {
             domain = cfg.domain;
-            authelia_url = cfg.authelia_url;
+            authelia_url = cfg.external_url;
           }
         ];
         storage.local.path = "/var/lib/authelia-main/db.sqlite3";
