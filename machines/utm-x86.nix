@@ -47,7 +47,7 @@
         }
       ];
       storage.local.path = "/var/lib/authelia-main/db.sqlite3";
-      # notifier.filesystem.filename = "/var/lib/authelia-main/notifications.txt";
+      notifier.filesystem.filename = "/var/lib/authelia-main/notifications.txt";
       totp = {
         issuer = "vafer.work";
       };
@@ -60,8 +60,7 @@
         default_policy = "two_factor";
       };
       authentication_backend = {
-        password_change = false;
-        password_reset = false;
+        password_reset.disable = true;
       };
     };
   };
