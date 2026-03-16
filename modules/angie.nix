@@ -8,94 +8,43 @@
 let
   cfg = config.services.angie;
 
-  # All vhosts that need OIDC
-  oidcVhosts = lib.filterAttrs (_: v: v.oidc != null) cfg.virtualHosts;
-  needsLua = oidcVhosts != { };
-
-  # Lua resty packages and path
-  luaPackages = pkgs.luajitPackages;
-  luaResty = with luaPackages; [
-    lua-resty-openidc
-    lua-resty-http
-    lua-resty-jwt
-    lua-resty-session
-    lua-resty-openssl
-    lua-resty-core
-    lua-resty-lrucache
-  ];
-  luaPath = lib.concatStringsSep ";" (map (p: "${p}/share/lua/5.1/?.lua") luaResty);
-
-  # Build a shared Lua opts file for a vhost with OIDC configured
-  mkOidcOptsFile =
-    name: vhost:
+  autheliaPort =
+    name:
     let
-      oidc = vhost.oidc;
-      provider = cfg.oidcProviders.${oidc.provider};
+      instances = config.services.authelia.instances;
+      addr = lib.attrByPath [ name "settings" "server" "address" ] "tcp://:9091/" instances;
+      # addr is like "tcp://:9091/" — extract the port number
+      port = lib.last (
+        lib.splitString ":" (lib.head (lib.splitString "/" (lib.removePrefix "tcp://:" addr)))
+      );
     in
-    pkgs.writeText "${name}-oidc-opts.lua" ''
-      return {
-        redirect_uri              = "https://${name}/auth/callback",
-        discovery                 = "${provider.discoveryUrl}",
-        client_id                 = "${oidc.clientId}",
-        client_secret_file        = "${oidc.secretFile}",
-        logout_path               = "/auth/logout",
-        redirect_after_logout_uri = "/auth/logged-out",
-        revoke_tokens_on_logout   = true,
-      }
+    port;
+
+  # Generate the internal Authelia authz location for a vhost
+  mkAutheliaLocation = port: {
+    extraConfig = ''
+      internal;
+      proxy_pass http://127.0.0.1:${port}/api/authz/auth-request;
+      proxy_set_header X-Original-Method $request_method;
+      proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+      proxy_set_header X-Forwarded-For $remote_addr;
+      proxy_set_header Content-Length "";
+      proxy_pass_request_body off;
     '';
-
-  # Generate the access_by_lua_block for a protected location
-  mkAccessBlock = optsFile: ''
-    access_by_lua_block {
-      local openidc = require("resty.openidc")
-      local opts = dofile("${optsFile}")
-      local res, err = openidc.authenticate(opts)
-      if err then
-        ngx.status = 500
-        ngx.say(err)
-        ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
-      end
-    }
-  '';
-
-  # Generate the auto locations for OIDC callback/logout
-  mkOidcLocations = optsFile: {
-    "/auth/callback" = {
-      extraConfig = ''
-        access_by_lua_block {
-          local openidc = require("resty.openidc")
-          local opts = dofile("${optsFile}")
-          local res, err = openidc.authenticate(opts)
-          if err then
-            ngx.status = 500
-            ngx.say(err)
-            ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
-          end
-        }
-      '';
-    };
-    "/auth/logout" = {
-      extraConfig = ''
-        access_by_lua_block {
-          local openidc = require("resty.openidc")
-          local opts = dofile("${optsFile}")
-          openidc.logout(opts)
-        }
-      '';
-    };
-    "/auth/logged-out" = {
-      extraConfig = ''
-        default_type text/plain;
-        return 200 "logged out\n";
-      '';
-    };
   };
+
+  # Inject auth_request into a location's extraConfig
+  mkProtectedExtraConfig = userExtraConfig: ''
+    auth_request /internal/authelia/authz;
+    auth_request_set $redirection_url $upstream_http_location;
+    error_page 401 =302 $redirection_url;
+    ${userExtraConfig}
+  '';
 
   # Convert a single angie location to a nginx location attrset
   mkNginxLocation =
-    optsFile: _path: loc:
+    protect: _path: loc:
     let
-      accessBlock = lib.optionalString (loc.protect && optsFile != null) (mkAccessBlock optsFile);
       returnLine = lib.optionalString (loc.return != null) "return ${loc.return};";
       proxyBlock = lib.optionalString (loc.proxyPass != null) ''
         proxy_pass ${loc.proxyPass};
@@ -105,26 +54,30 @@ let
           proxy_set_header Connection "upgrade";
         ''}
       '';
-    in
-    {
-      extraConfig = lib.concatStringsSep "\n" (
+      baseExtra = lib.concatStringsSep "\n" (
         lib.filter (s: s != "") [
-          accessBlock
           returnLine
           proxyBlock
           loc.extraConfig
         ]
       );
+    in
+    {
+      extraConfig = if protect then mkProtectedExtraConfig baseExtra else baseExtra;
     };
 
   # Convert a single angie vhost to a nginx virtualHost attrset
   mkNginxVhost =
     name: vhost:
     let
-      optsFile = if vhost.oidc != null then mkOidcOptsFile name vhost else null;
-      userLocations = lib.mapAttrs (mkNginxLocation optsFile) vhost.locations;
-      oidcLocations = lib.optionalAttrs (vhost.oidc != null) (mkOidcLocations optsFile);
-      allLocations = oidcLocations // userLocations;
+      protect = vhost.authrequest != null;
+      port = lib.optionalString protect (autheliaPort vhost.authrequest);
+
+      userLocations = lib.mapAttrs (mkNginxLocation protect) vhost.locations;
+      autheliaLocation = lib.optionalAttrs protect {
+        "/internal/authelia/authz" = mkAutheliaLocation port;
+      };
+      allLocations = autheliaLocation // userLocations;
     in
     {
       forceSSL = vhost.forceSSL;
@@ -139,19 +92,6 @@ in
   # Options
   # --------------------------------------------------------------------------
   options.services.angie = {
-
-    oidcProviders = lib.mkOption {
-      default = { };
-      description = "Named OIDC provider configurations.";
-      type = lib.types.attrsOf (
-        lib.types.submodule {
-          options.discoveryUrl = lib.mkOption {
-            type = lib.types.str;
-            description = "OIDC discovery endpoint URL.";
-          };
-        }
-      );
-    };
 
     virtualHosts = lib.mkOption {
       default = { };
@@ -171,27 +111,13 @@ in
               description = "Generate and use a self-signed certificate for this vhost.";
             };
 
-            oidc = lib.mkOption {
+            authrequest = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
               default = null;
-              description = "OIDC configuration. When set, Lua auth locations are generated automatically.";
-              type = lib.types.nullOr (
-                lib.types.submodule {
-                  options = {
-                    provider = lib.mkOption {
-                      type = lib.types.str;
-                      description = "Key of the provider in services.angie.oidcProviders.";
-                    };
-                    clientId = lib.mkOption {
-                      type = lib.types.str;
-                      description = "OIDC client ID.";
-                    };
-                    secretFile = lib.mkOption {
-                      type = lib.types.str;
-                      description = "Path to a file containing the OIDC client secret.";
-                    };
-                  };
-                }
-              );
+              description = ''
+                Name of the Authelia instance to use for forward auth.
+                When set, all locations on this vhost require authentication.
+              '';
             };
 
             locations = lib.mkOption {
@@ -200,11 +126,6 @@ in
               type = lib.types.attrsOf (
                 lib.types.submodule {
                   options = {
-                    protect = lib.mkOption {
-                      type = lib.types.bool;
-                      default = false;
-                      description = "Require OIDC authentication for this location.";
-                    };
                     return = lib.mkOption {
                       type = lib.types.nullOr lib.types.str;
                       default = null;
@@ -240,22 +161,9 @@ in
   # --------------------------------------------------------------------------
   config = lib.mkIf (cfg.virtualHosts != { }) {
 
-    nixpkgs.overlays = lib.mkIf needsLua [
-      (final: prev: {
-        angieWithLua = prev.angie.override {
-          withAcme = true;
-          modules = [ prev.nginxModules.lua ];
-        };
-      })
-    ];
-
     services.nginx = {
       enable = true;
-      package = if needsLua then pkgs.angieWithLua else pkgs.angie;
-
-      commonHttpConfig = lib.mkIf needsLua ''
-        lua_package_path '${luaPath};;';
-      '';
+      package = pkgs.angie;
 
       virtualHosts = lib.mapAttrs mkNginxVhost cfg.virtualHosts;
     };
