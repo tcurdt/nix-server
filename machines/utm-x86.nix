@@ -17,14 +17,9 @@
 
     { users.users.root.password = "secret"; }
 
+    ../modules/angie.nix
     ../modules/nginx-selfsigned.nix
 
-  ];
-
-  nixpkgs.overlays = [
-    (final: prev: {
-      angieWithAcme = prev.angie.override { withAcme = true; };
-    })
   ];
 
   networking.firewall.allowedTCPPorts = [
@@ -32,8 +27,9 @@
     80
     443
   ];
-  networking.firewall.allowedUDPPorts = [ 53 ];
+  # networking.firewall.allowedUDPPorts = [ 53 ];
 
+  # https://id.vafer.work/setup
   services.pocket-id = {
     enable = true;
     settings = {
@@ -43,37 +39,35 @@
     };
   };
 
-  services.nginx = {
-    enable = true;
-    package = pkgs.angieWithAcme;
-    # appendHttpConfig = ''
-    #   resolver 1.1.1.1 8.8.8.8;
-    #   acme_client vafer_work https://acme-staging-v02.api.letsencrypt.org/directory challenge=http;
-    # '';
-    virtualHosts = {
-      "id.vafer.work" = {
-        forceSSL = true;
-        sslCertificate = "/var/lib/nginx/id.vafer.work.crt";
-        sslCertificateKey = "/var/lib/nginx/id.vafer.work.key";
-        # extraConfig = ''
-        #   acme vafer_work;
-        #   ssl_certificate $acme_cert_vafer_work;
-        #   ssl_certificate_key $acme_cert_key_vafer_work;
-        # '';
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8201";
-          proxyWebsockets = true;
-        };
+  services.angie = {
+
+    oidcProviders."pocket-id" = {
+      discoveryUrl = "https://id.vafer.work/.well-known/openid-configuration";
+    };
+
+    virtualHosts."id.vafer.work" = {
+      forceSSL = true;
+      selfSigned = true;
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:8201";
+        proxyWebsockets = true;
       };
     };
+
+    virtualHosts."test.vafer.work" = {
+      forceSSL = true;
+      selfSigned = true;
+      oidc = {
+        provider = "pocket-id";
+        clientId = "test-vafer-work";
+        secretFile = "/secrets/test-vafer-work-oidc-secret";
+      };
+      locations."/" = {
+        protect = true;
+        return = ''200 "hello\n"'';
+      };
+    };
+
   };
 
-  systemd.tmpfiles.rules = [
-    "d /var/lib/nginx 0750 nginx nginx -"
-    "d /var/lib/nginx/acme 0700 nginx nginx -"
-  ];
-
-  services.nginx-selfsigned.domains = [ "id.vafer.work" ];
-
-  systemd.services.nginx.serviceConfig.ReadWritePaths = [ "/var/lib/nginx" ];
 }
