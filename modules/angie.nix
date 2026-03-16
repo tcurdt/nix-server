@@ -6,25 +6,13 @@
 }:
 
 let
-  cfg = config.services.angie;
-
-  autheliaPort =
-    name:
-    let
-      instances = config.services.authelia.instances;
-      addr = lib.attrByPath [ name "settings" "server" "address" ] "tcp://:9091/" instances;
-      # addr is like "tcp://:9091/" — extract the port number
-      port = lib.last (
-        lib.splitString ":" (lib.head (lib.splitString "/" (lib.removePrefix "tcp://:" addr)))
-      );
-    in
-    port;
+  cfg = config.services.my.angie;
 
   # Generate the internal Authelia authz location for a vhost
   mkAutheliaLocation = port: {
     extraConfig = ''
       internal;
-      proxy_pass http://127.0.0.1:${port}/api/authz/auth-request;
+      proxy_pass http://127.0.0.1:${toString port}/api/authz/auth-request;
       proxy_set_header X-Original-Method $request_method;
       proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
       proxy_set_header X-Forwarded-For $remote_addr;
@@ -52,8 +40,8 @@ let
     if slug == "" then "root" else slug;
 
   # Convert a single angie location to a set of nginx location attrsets.
-  # Returns an attrset { mainLocation, extraLocations } where extraLocations
-  # holds any auxiliary named locations needed (e.g. @content_* for protected returns).
+  # Returns an attrset { main, extra } where extra holds any auxiliary named
+  # locations needed (e.g. @content_* for protected returns).
   mkNginxLocations =
     protect: path: loc:
     let
@@ -118,8 +106,8 @@ let
   mkNginxVhost =
     name: vhost:
     let
-      protect = vhost.authRequired != null;
-      port = lib.optionalString protect (autheliaPort vhost.authRequired);
+      protect = vhost.authelia != null;
+      port = if protect then vhost.authelia.port else null;
 
       locationResults = lib.mapAttrs (mkNginxLocations protect) vhost.locations;
       userLocations = lib.foldlAttrs (
@@ -149,7 +137,7 @@ in
     ./nginx-selfsigned.nix
   ];
 
-  options.services.angie = {
+  options.services.my.angie = {
 
     virtualHosts = lib.mkOption {
       default = { };
@@ -160,7 +148,7 @@ in
 
             forceSSL = lib.mkOption {
               type = lib.types.bool;
-              default = false;
+              default = true;
             };
 
             selfSigned = lib.mkOption {
@@ -169,13 +157,26 @@ in
               description = "Generate and use a self-signed certificate for this vhost.";
             };
 
-            authRequired = lib.mkOption {
-              type = lib.types.nullOr lib.types.str;
+            authelia = lib.mkOption {
               default = null;
               description = ''
-                Name of the Authelia instance to use for forward auth.
+                Authelia instance to use for forward auth on this vhost.
+                Pass the services.my.authelia attrset directly.
                 When set, all locations on this vhost require authentication.
               '';
+              type = lib.types.nullOr (
+                lib.types.submodule {
+                  freeformType = lib.types.attrsOf lib.types.anything;
+                  options = {
+                    port = lib.mkOption {
+                      type = lib.types.port;
+                    };
+                    url = lib.mkOption {
+                      type = lib.types.str;
+                    };
+                  };
+                }
+              );
             };
 
             locations = lib.mkOption {

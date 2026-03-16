@@ -1,4 +1,4 @@
-{ ... }:
+{ config, ... }:
 {
 
   networking.hostName = "utm-x86";
@@ -17,6 +17,7 @@
 
     { users.users.root.password = "secret"; }
 
+    ../modules/authelia.nix
     ../modules/angie.nix
 
   ];
@@ -26,55 +27,23 @@
     443
   ];
 
-  # https://id.vafer.work
-  services.authelia.instances.main = {
-    enable = true;
-    secrets = {
-      jwtSecretFile = "/secrets/authelia-jwt";
-      storageEncryptionKeyFile = "/secrets/authelia-storage";
-      sessionSecretFile = "/secrets/authelia-session";
-    };
-    settings = {
-      theme = "dark";
-      authentication_backend.file.path = "/etc/authelia/users.yml";
-      session.cookies = [
-        {
-          domain = "vafer.work";
-          authelia_url = "https://id.vafer.work";
-        }
-      ];
-      storage.local.path = "/var/lib/authelia-main/db.sqlite3";
-      notifier.filesystem.filename = "/var/lib/authelia-main/notifications.txt";
-      totp = {
-        issuer = "vafer.work";
-      };
-      webauthn = {
-        enable_passkey_login = true;
-        display_name = "vafer.work";
-      };
-      access_control = {
-        default_policy = "one_factor";
-      };
-      authentication_backend = {
-        password_reset.disable = true;
-      };
-    };
+  services.my.authelia = {
+    domain = "vafer.work";
+    authelia_url = "https://id.vafer.work";
   };
 
-  services.angie = {
+  services.my.angie = {
 
     virtualHosts."id.vafer.work" = {
-      forceSSL = true;
       selfSigned = true;
       locations."/" = {
-        proxyPass = "http://127.0.0.1:9091";
+        proxyPass = config.services.my.authelia.url;
       };
     };
 
     virtualHosts."test.vafer.work" = {
-      forceSSL = true;
       selfSigned = true;
-      authRequired = "main";
+      authelia = config.services.my.authelia;
       locations."/" = {
         return = ''200 "hello\n"'';
       };
