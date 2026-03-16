@@ -41,11 +41,33 @@ let
     ${userExtraConfig}
   '';
 
-  # Convert a single angie location to a nginx location attrset
-  mkNginxLocation =
-    protect: _path: loc:
+  # Sanitize a location path into a valid nginx named-location suffix
+  # e.g. "/" -> "root", "/api/foo" -> "api_foo"
+  pathToSlug =
+    path:
     let
-      returnLine = lib.optionalString (loc.return != null) "return ${loc.return};";
+      stripped = lib.removePrefix "/" path;
+      slug = builtins.replaceStrings [ "/" "-" "." ] [ "_" "_" "_" ] stripped;
+    in
+    if slug == "" then "root" else slug;
+
+  # Convert a single angie location to a set of nginx location attrsets.
+  # Returns an attrset { mainLocation, extraLocations } where extraLocations
+  # holds any auxiliary named locations needed (e.g. @content_* for protected returns).
+  mkNginxLocations =
+    protect: path: loc:
+    let
+      slug = pathToSlug path;
+      namedContent = "@content_${slug}";
+
+      # When protected + return: the return must go into a named location so that
+      # auth_request (access phase) runs before rewrite-phase `return`.
+      useNamedReturn = protect && loc.return != null;
+
+      returnLine = lib.optionalString (loc.return != null && !useNamedReturn) ''
+        default_type text/plain;
+        return ${loc.return};
+      '';
       proxyBlock = lib.optionalString (loc.proxyPass != null) ''
         proxy_pass ${loc.proxyPass};
         proxy_set_header Host $host;
@@ -58,16 +80,38 @@ let
           proxy_set_header Connection "upgrade";
         ''}
       '';
+      # For useNamedReturn: replace return with try_files -> named location
+      tryFilesLine = lib.optionalString useNamedReturn ''
+        try_files /nonexistent ${namedContent};
+      '';
       baseExtra = lib.concatStringsSep "\n" (
         lib.filter (s: s != "") [
           returnLine
           proxyBlock
+          tryFilesLine
           loc.extraConfig
         ]
       );
+
+      mainLocation = {
+        extraConfig = if protect then mkProtectedExtraConfig baseExtra else baseExtra;
+      };
+
+      # Named location that holds the actual return content (no auth here — auth already passed)
+      contentLocation = lib.optionalAttrs useNamedReturn {
+        ${namedContent} = {
+          extraConfig = ''
+            default_type text/plain;
+            return ${loc.return};
+          '';
+        };
+      };
     in
     {
-      extraConfig = if protect then mkProtectedExtraConfig baseExtra else baseExtra;
+      main = {
+        ${path} = mainLocation;
+      };
+      extra = contentLocation;
     };
 
   # Convert a single angie vhost to a nginx virtualHost attrset
@@ -77,11 +121,20 @@ let
       protect = vhost.authrequest != null;
       port = lib.optionalString protect (autheliaPort vhost.authrequest);
 
-      userLocations = lib.mapAttrs (mkNginxLocation protect) vhost.locations;
+      locationResults = lib.mapAttrs (mkNginxLocations protect) vhost.locations;
+      userLocations = lib.foldlAttrs (
+        acc: _: r:
+        acc // r.main
+      ) { } locationResults;
+      extraLocations = lib.foldlAttrs (
+        acc: _: r:
+        acc // r.extra
+      ) { } locationResults;
+
       autheliaLocation = lib.optionalAttrs protect {
         "/internal/authelia/authz" = mkAutheliaLocation port;
       };
-      allLocations = autheliaLocation // userLocations;
+      allLocations = autheliaLocation // userLocations // extraLocations;
     in
     {
       forceSSL = vhost.forceSSL;
