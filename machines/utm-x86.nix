@@ -38,6 +38,7 @@
       sessionSecretFile = "/secrets/authelia-session";
     };
     settings = {
+      theme = "dark";
       authentication_backend.file.path = "/etc/authelia/users.yml";
       session.cookies = [
         {
@@ -46,12 +47,21 @@
         }
       ];
       storage.local.path = "/var/lib/authelia-main/db.sqlite3";
-      notifier.filesystem.filename = "/var/lib/authelia-main/notifications.txt";
+      # notifier.filesystem.filename = "/var/lib/authelia-main/notifications.txt";
+      totp = {
+        issuer = "vafer.work";
+      };
       webauthn = {
         enable_passkey_login = true;
+        display_name = "vafer.work";
       };
       access_control = {
-        default_policy = "one_factor";
+        #default_policy = "one_factor";
+        default_policy = "two_factor";
+      };
+      authentication_backend = {
+        password_change = false;
+        password_reset = false;
       };
     };
   };
