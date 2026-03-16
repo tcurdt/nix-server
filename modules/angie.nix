@@ -118,8 +118,8 @@ let
   mkNginxVhost =
     name: vhost:
     let
-      protect = vhost.authrequest != null;
-      port = lib.optionalString protect (autheliaPort vhost.authrequest);
+      protect = vhost.authRequired != null;
+      port = lib.optionalString protect (autheliaPort vhost.authRequired);
 
       locationResults = lib.mapAttrs (mkNginxLocations protect) vhost.locations;
       userLocations = lib.foldlAttrs (
@@ -145,9 +145,10 @@ let
 
 in
 {
-  # --------------------------------------------------------------------------
-  # Options
-  # --------------------------------------------------------------------------
+  imports = [
+    ./nginx-selfsigned.nix
+  ];
+
   options.services.angie = {
 
     virtualHosts = lib.mkOption {
@@ -168,7 +169,7 @@ in
               description = "Generate and use a self-signed certificate for this vhost.";
             };
 
-            authrequest = lib.mkOption {
+            authRequired = lib.mkOption {
               type = lib.types.nullOr lib.types.str;
               default = null;
               description = ''

@@ -18,23 +18,20 @@
     { users.users.root.password = "secret"; }
 
     ../modules/angie.nix
-    ../modules/nginx-selfsigned.nix
 
   ];
 
   networking.firewall.allowedTCPPorts = [
-    # 53
     80
     443
   ];
-  # networking.firewall.allowedUDPPorts = [ 53 ];
 
   # https://id.vafer.work
   services.authelia.instances.main = {
     enable = true;
     secrets = {
       jwtSecretFile = "/secrets/authelia-jwt";
-      storageEncryptionKeyFile = "/secrets/authelia-storage-key";
+      storageEncryptionKeyFile = "/secrets/authelia-storage";
       sessionSecretFile = "/secrets/authelia-session";
     };
     settings = {
@@ -56,8 +53,7 @@
         display_name = "vafer.work";
       };
       access_control = {
-        #default_policy = "one_factor";
-        default_policy = "two_factor";
+        default_policy = "one_factor";
       };
       authentication_backend = {
         password_reset.disable = true;
@@ -78,12 +74,11 @@
     virtualHosts."test.vafer.work" = {
       forceSSL = true;
       selfSigned = true;
-      authrequest = "main";
+      authRequired = "main";
       locations."/" = {
         return = ''200 "hello\n"'';
       };
     };
 
   };
-
 }
