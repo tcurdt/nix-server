@@ -18,6 +18,7 @@
     { users.users.root.password = "secret"; }
 
     ../modules/authelia.nix
+    ../modules/formcha.nix
     ../modules/angie.nix
 
   ];
@@ -30,6 +31,11 @@
   services.my.authelia = {
     domain = "vafer.work";
     authelia_url = "https://id.vafer.work";
+  };
+
+  services.my.formcha = {
+    enable = true;
+    envFile = "/secrets/formcha.env";
   };
 
   services.my.angie = {
@@ -45,7 +51,7 @@
       selfSigned = true;
       authelia = config.services.my.authelia;
       locations."/" = {
-        return = ''200 "hello\n"'';
+        proxyPass = config.services.my.formcha.url;
       };
     };
 

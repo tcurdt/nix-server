@@ -10,9 +10,8 @@
     comin.url = "github:nlewo/comin";
     comin.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    # release-go.url = "github:tcurdt/release-go";
-    # release-go.inputs.nixpkgs.follows = "nixpkgs-stable";
-    # sshhook.url = "git+file:///Users/tcurdt/Desktop/nix/flake-sshhook/";
+    formcha.url = "github:tcurdt/formcha";
+    formcha.inputs.nixpkgs.follows = "nixpkgs-stable";
 
   };
 
@@ -20,6 +19,7 @@
     {
       nixpkgs-stable,
       comin,
+      formcha,
       ...
     }@inputs:
     let
@@ -55,7 +55,7 @@
 
         utm-x86 = nixpkgs-stable.lib.nixosSystem {
           specialArgs = {
-            inherit inputs;
+            inherit inputs formcha;
           };
           modules = [
             inputs.home.nixosModules.default
