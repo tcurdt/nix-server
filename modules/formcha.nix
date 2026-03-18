@@ -35,28 +35,28 @@ in
 
     systemd.sockets.formcha = {
       description = "formcha server socket";
+      partOf = [ "formcha.service" ];
       wantedBy = [ "sockets.target" ];
       socketConfig = {
         ListenStream = socketPath;
+        Backlog = 128;
+        # NoDelay = true;
+        DirectoryMode = "0770";
         SocketMode = "0660";
         SocketGroup = "nginx";
-        StopWhenUnneeded = true;
-        # Backlog=4096;
-        # Accept=no;
       };
     };
 
     systemd.services.formcha = {
       description = "formcha server";
+      after = [ "network.target" ];
       serviceConfig = {
         ExecStart = "${package}/bin/formcha";
+        Type = "simple";
+        TimeoutStartSec = "15s";
+        ExecStop = "${pkgs.systemd}/bin/systemctl stop formcha.service";
         EnvironmentFile = cfg.envFile;
         DynamicUser = true;
-        RuntimeDirectory = "formcha";
-        RuntimeDirectoryMode = "0750";
-        TimeoutIdleSec = 15;
-        # KillSignal=SIGTERM;
-        # Restart=on-failure;
       };
     };
 
