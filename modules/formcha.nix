@@ -53,8 +53,7 @@ in
       serviceConfig = {
         ExecStart = "${package}/bin/formcha";
         Type = "simple";
-        TimeoutStartSec = "15s";
-        ExecStop = "${pkgs.systemd}/bin/systemctl stop formcha.service";
+        Environment = [ "FORMCHA_IDLE_TIMEOUT=30s" ];
         EnvironmentFile = cfg.envFile;
         DynamicUser = true;
       };

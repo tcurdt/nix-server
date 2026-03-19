@@ -64,11 +64,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1773700107,
-        "narHash": "sha256-uBB+5GDTnmy7IE67fUb3aWmP90jo+W3UlEZV5gIpq9I=",
+        "lastModified": 1773881639,
+        "narHash": "sha256-fKEGjGT1HW14KmX2CPoKNJ6J7TKQrhSiwRiOCDqLtEo=",
         "owner": "tcurdt",
         "repo": "formcha",
-        "rev": "ed13ee6145baf251539c7696bef45c7d4ecb3a78",
+        "rev": "b26da85c4192f9751753120b66c47e8ba9c1ef37",
         "type": "github"
       },
       "original": {
