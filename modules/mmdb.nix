@@ -1,52 +1,71 @@
 {
+  lib,
   pkgs,
+  config,
   ...
 }:
+
+let
+  cfg = config.services.my.mmdb;
+in
 {
   # mhttps://ip66.dev/
 
-  environment.systemPackages = [
-    pkgs.mmdbinspect
-  ];
+  options.services.my.mmdb = {
+    enable = lib.mkEnableOption "mmdb refresh";
 
-  systemd.services.mmdb-fetch = {
-    description = "download mmdb if missing or older than 5 days";
-    serviceConfig.Type = "oneshot";
-
-    path = with pkgs; [
-      bash
-      coreutils
-      curl
-      findutils
-    ];
-
-    script = ''
-      set -eu
-
-      file="/var/lib/mmdb/ip66.mmdb"
-      url="https://downloads.ip66.dev/db/ip66.mmdb"
-
-      mkdir -p "$(dirname "$file")"
-
-      if [ ! -e "$file" ]; then
-        exec curl -fL -o "$file" "$url"
-      fi
-
-      if find "$file" -mtime +5 | grep -q .; then
-        exec curl -fL -z "$file" -o "$file" "$url"
-      fi
-    '';
+    days = lib.mkOption {
+      type = lib.types.int;
+      default = 1;
+      description = "Refresh mmdb when the local file is older than this many days.";
+    };
   };
 
-  systemd.timers.mmdb-fetch = {
-    description = "check if mmdb should be refreshed";
-    wantedBy = [ "timers.target" ];
-    partOf = [ "mmdb-fetch.service" ];
+  config = lib.mkIf cfg.enable {
+    environment.systemPackages = [
+      pkgs.mmdbinspect
+    ];
 
-    timerConfig = {
-      OnBootSec = "2min";
-      OnUnitActiveSec = "1h";
-      Unit = "mmdb-fetch.service";
+    systemd.services.mmdb-fetch = {
+
+      description = "download mmdb if missing or older than ${toString cfg.days} days";
+      serviceConfig.Type = "oneshot";
+
+      path = with pkgs; [
+        bash
+        coreutils
+        curl
+        findutils
+      ];
+
+      script = ''
+        set -eu
+
+        file="/var/lib/mmdb/ip66.mmdb"
+        url="https://downloads.ip66.dev/db/ip66.mmdb"
+
+        mkdir -p "$(dirname "$file")"
+
+        if [ ! -e "$file" ]; then
+          exec curl -fL -o "$file" "$url"
+        fi
+
+        if find "$file" -mtime +${toString cfg.days} | grep -q .; then
+          exec curl -fL -z "$file" -o "$file" "$url"
+        fi
+      '';
+    };
+
+    systemd.timers.mmdb-fetch = {
+      description = "check if mmdb should be refreshed";
+      wantedBy = [ "timers.target" ];
+      partOf = [ "mmdb-fetch.service" ];
+
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "1h";
+        Unit = "mmdb-fetch.service";
+      };
     };
   };
 }
