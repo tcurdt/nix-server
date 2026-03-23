@@ -7,6 +7,7 @@
     enable = true;
     settings = {
       analytics.reporting_enabled = false;
+      auth.grafana_com.auto_login = true;
       security = {
         admin_user = "admin";
         admin_email = "admin@localhost";
@@ -32,5 +33,5 @@
     };
   };
 
-  environment.systemPackages = [ ];
+  # environment.systemPackages = [ ];
 }
