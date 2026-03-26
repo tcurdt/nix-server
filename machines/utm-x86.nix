@@ -55,21 +55,23 @@
       selfSigned = true;
       authelia = config.services.my.authelia;
       locations."/" = {
-        proxyPass = config.services.my.formcha.main.url;
+        proxyPass = config.services.my.formcha.url;
       };
     };
   };
 
-  services.my.formcha.main = {
+  services.my.formcha = {
     enable = true;
-    envFile = "/secrets/formcha.env";
+    instances.main = {
+      envFile = "/secrets/formcha.env";
+    };
   };
 
-  services.my.spacetimedb.main = {
+  services.my.spacetimedb = {
     enable = true;
   };
 
-  services.my.sqld.main = {
+  services.my.sqld = {
     enable = true;
     primary = true; # false for replica
     listenAddress = "0.0.0.0";
@@ -90,11 +92,27 @@
     };
   };
 
-  services.my.postgres.main = {
+  services.my.postgres = {
     enable = true;
     # listenAddress = "0.0.0.0";
     # port = 5432;
-    # unixSocket = "/run/postgres/main.sock";
+    unixSocketDir = "/run/postgres/main";
     # databases = [ "main" ];
   };
+
+  # services.my.postgres.instances.main = {
+  #   enable = true;
+  #   # listenAddress = "0.0.0.0";
+  #   # port = 5432;
+  #   # unixSocketDir = "/run/postgres/main";
+  #   # databases = [ "main" ];
+  # };
+  # services.my.postgres.instances.replica = {
+  #   enable = true;
+  #   # listenAddress = "0.0.0.0";
+  #   # port = 5432;
+  #   # unixSocketDir = "/run/postgres/replica";
+  #   # databases = [ "main" ];
+  # };
+
 }

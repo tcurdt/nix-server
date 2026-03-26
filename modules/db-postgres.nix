@@ -7,9 +7,36 @@
 
 let
   cfg = config.services.my.postgres;
-  enabledInstances = lib.filterAttrs (_: instance: instance.enable) cfg;
+  inheritOr = value: fallback: if value == null then fallback else value;
 
-  mkUserName = instance: "postgres-${instance}";
+  normalizeInstance = name: instanceCfg: {
+    enable = inheritOr instanceCfg.enable cfg.enable;
+    user = inheritOr instanceCfg.user cfg.user;
+    package = inheritOr instanceCfg.package cfg.package;
+    listenAddress = inheritOr instanceCfg.listenAddress cfg.listenAddress;
+    port = inheritOr instanceCfg.port cfg.port;
+    dataDir = inheritOr instanceCfg.dataDir (inheritOr cfg.dataDir "/var/lib/postgres/${name}");
+    unixSocketDir = inheritOr instanceCfg.unixSocketDir (
+      inheritOr cfg.unixSocketDir "/run/postgres/${name}"
+    );
+    initdbArgs = inheritOr instanceCfg.initdbArgs cfg.initdbArgs;
+    settings = inheritOr instanceCfg.settings cfg.settings;
+    extraHba = inheritOr instanceCfg.extraHba cfg.extraHba;
+    databases = inheritOr instanceCfg.databases cfg.databases;
+  };
+
+  effectiveInstances =
+    if cfg.instances != { } then
+      lib.mapAttrs normalizeInstance cfg.instances
+    else
+      {
+        main = normalizeInstance "main" cfg;
+      };
+
+  enabledInstances = lib.filterAttrs (_: instance: instance.enable) effectiveInstances;
+  enabledUsers = lib.unique (
+    map (instanceCfg: instanceCfg.user) (builtins.attrValues enabledInstances)
+  );
 
   mkConf =
     instanceCfg:
@@ -65,8 +92,8 @@ let
     path = [ pkgs.gnugrep ];
     serviceConfig = {
       Type = "notify";
-      User = mkUserName instance;
-      Group = mkUserName instance;
+      User = instanceCfg.user;
+      Group = instanceCfg.user;
       RuntimeDirectory = "postgres/${instance}";
       RuntimeDirectoryMode = "0750";
       StateDirectory = "postgres/${instance}";
@@ -96,105 +123,187 @@ in
 {
   options.services.my.postgres = lib.mkOption {
     default = { };
-    description = "PostgreSQL instances keyed by instance name.";
-    type = lib.types.lazyAttrsOf (
-      lib.types.submodule (
-        { name, ... }:
-        {
-          options = {
-            enable = lib.mkEnableOption "postgres instance";
+    description = "PostgreSQL service defaults and instances.";
+    type = lib.types.submodule {
+      options = {
+        enable = lib.mkEnableOption "postgres";
 
-            package = lib.mkOption {
-              type = lib.types.package;
-              default = pkgs.postgresql;
-              defaultText = lib.literalExpression "pkgs.postgresql";
-              description = "PostgreSQL package used for this instance.";
-            };
+        user = lib.mkOption {
+          type = lib.types.str;
+          default = "postgres";
+          description = "Default system user/group for PostgreSQL instances.";
+        };
 
-            listenAddress = lib.mkOption {
-              type = lib.types.str;
-              default = "127.0.0.1";
-              description = "Address to bind this PostgreSQL instance to.";
-            };
+        package = lib.mkOption {
+          type = lib.types.package;
+          default = pkgs.postgresql;
+          defaultText = lib.literalExpression "pkgs.postgresql";
+          description = "Default PostgreSQL package for instances.";
+        };
 
-            port = lib.mkOption {
-              type = lib.types.port;
-              default = 5432;
-              description = "TCP port for this PostgreSQL instance.";
-            };
+        listenAddress = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = "Default address to bind PostgreSQL instances to.";
+        };
 
-            dataDir = lib.mkOption {
-              type = lib.types.str;
-              default = "/var/lib/postgres/${name}";
-              description = "Data directory for this PostgreSQL instance.";
-            };
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = 5432;
+          description = "Default TCP port for PostgreSQL instances.";
+        };
 
-            unixSocketDir = lib.mkOption {
-              type = lib.types.str;
-              default = "/run/postgres/${name}";
-              description = "Directory for unix socket files for this instance.";
-            };
+        dataDir = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "Default data directory for instances. Null uses /var/lib/postgres/<instance>.";
+        };
 
-            initdbArgs = lib.mkOption {
-              type = lib.types.listOf lib.types.str;
-              default = [
-                "--encoding=UTF8"
-                "--locale=C"
-                "--auth-local=trust"
-                "--auth-host=scram-sha-256"
-              ];
-              description = "Arguments passed to initdb during first initialization.";
-            };
+        unixSocketDir = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "Default unix socket directory for instances. Null uses /run/postgres/<instance>.";
+        };
 
-            settings = lib.mkOption {
-              type = lib.types.attrsOf (
-                lib.types.oneOf [
-                  lib.types.bool
-                  lib.types.int
-                  lib.types.str
-                ]
-              );
-              default = { };
-              description = "Additional postgresql.conf settings for this instance.";
-            };
+        initdbArgs = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [
+            "--encoding=UTF8"
+            "--locale=C"
+            "--auth-local=trust"
+            "--auth-host=scram-sha-256"
+          ];
+          description = "Default arguments passed to initdb during initialization.";
+        };
 
-            extraHba = lib.mkOption {
-              type = lib.types.lines;
-              default = "";
-              description = "Extra lines appended to pg_hba.conf for this instance.";
-            };
+        settings = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.oneOf [
+              lib.types.bool
+              lib.types.int
+              lib.types.str
+            ]
+          );
+          default = { };
+          description = "Default additional postgresql.conf settings for instances.";
+        };
 
-            databases = lib.mkOption {
-              type = lib.types.listOf lib.types.str;
-              default = [ ];
-              description = "Databases ensured after startup (created if missing).";
-            };
-          };
-        }
-      )
-    );
+        extraHba = lib.mkOption {
+          type = lib.types.lines;
+          default = "";
+          description = "Default extra lines appended to pg_hba.conf.";
+        };
+
+        databases = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "Default databases ensured after startup.";
+        };
+
+        instances = lib.mkOption {
+          default = { };
+          description = "PostgreSQL instances keyed by instance name.";
+          type = lib.types.lazyAttrsOf (
+            lib.types.submodule {
+              options = {
+                enable = lib.mkOption {
+                  type = lib.types.nullOr lib.types.bool;
+                  default = null;
+                  description = "Whether this instance is enabled. Null inherits services.my.postgres.enable.";
+                };
+
+                user = lib.mkOption {
+                  type = lib.types.nullOr lib.types.str;
+                  default = null;
+                  description = "System user/group for this instance. Null inherits services.my.postgres.user.";
+                };
+
+                package = lib.mkOption {
+                  type = lib.types.nullOr lib.types.package;
+                  default = null;
+                  description = "PostgreSQL package for this instance. Null inherits services.my.postgres.package.";
+                };
+
+                listenAddress = lib.mkOption {
+                  type = lib.types.nullOr lib.types.str;
+                  default = null;
+                  description = "Address to bind this PostgreSQL instance to. Null inherits services.my.postgres.listenAddress.";
+                };
+
+                port = lib.mkOption {
+                  type = lib.types.nullOr lib.types.port;
+                  default = null;
+                  description = "TCP port for this PostgreSQL instance. Null inherits services.my.postgres.port.";
+                };
+
+                dataDir = lib.mkOption {
+                  type = lib.types.nullOr lib.types.str;
+                  default = null;
+                  description = "Data directory for this PostgreSQL instance. Null inherits services.my.postgres.dataDir, else /var/lib/postgres/<instance>.";
+                };
+
+                unixSocketDir = lib.mkOption {
+                  type = lib.types.nullOr lib.types.str;
+                  default = null;
+                  description = "Unix socket directory for this instance. Null inherits services.my.postgres.unixSocketDir, else /run/postgres/<instance>.";
+                };
+
+                initdbArgs = lib.mkOption {
+                  type = lib.types.nullOr (lib.types.listOf lib.types.str);
+                  default = null;
+                  description = "Arguments passed to initdb for this instance. Null inherits services.my.postgres.initdbArgs.";
+                };
+
+                settings = lib.mkOption {
+                  type = lib.types.nullOr (
+                    lib.types.attrsOf (
+                      lib.types.oneOf [
+                        lib.types.bool
+                        lib.types.int
+                        lib.types.str
+                      ]
+                    )
+                  );
+                  default = null;
+                  description = "Additional postgresql.conf settings for this instance. Null inherits services.my.postgres.settings.";
+                };
+
+                extraHba = lib.mkOption {
+                  type = lib.types.nullOr lib.types.lines;
+                  default = null;
+                  description = "Extra lines appended to pg_hba.conf for this instance. Null inherits services.my.postgres.extraHba.";
+                };
+
+                databases = lib.mkOption {
+                  type = lib.types.nullOr (lib.types.listOf lib.types.str);
+                  default = null;
+                  description = "Databases ensured after startup for this instance. Null inherits services.my.postgres.databases.";
+                };
+              };
+            }
+          );
+        };
+      };
+    };
   };
 
   config = lib.mkIf (enabledInstances != { }) {
-    users.groups = lib.mapAttrs' (
-      instance: _: lib.nameValuePair (mkUserName instance) { }
-    ) enabledInstances;
+    users.groups = lib.listToAttrs (map (user: lib.nameValuePair user { }) enabledUsers);
 
-    users.users = lib.mapAttrs' (
-      instance: instanceCfg:
-      lib.nameValuePair (mkUserName instance) {
-        isSystemUser = true;
-        group = mkUserName instance;
-        home = instanceCfg.dataDir;
-      }
-    ) enabledInstances;
+    users.users = lib.listToAttrs (
+      map (
+        user:
+        lib.nameValuePair user {
+          isSystemUser = true;
+          group = user;
+          home = "/var/lib/postgres";
+        }
+      ) enabledUsers
+    );
 
     systemd.tmpfiles.rules = lib.mapAttrsToList (
       instance: instanceCfg:
-      let
-        user = mkUserName instance;
-      in
-      "d ${instanceCfg.unixSocketDir} 0750 ${user} ${user} -"
+      "d ${instanceCfg.unixSocketDir} 0750 ${instanceCfg.user} ${instanceCfg.user} -"
     ) enabledInstances;
 
     systemd.services = lib.mapAttrs' (
