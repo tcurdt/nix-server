@@ -18,16 +18,15 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf (cfg.allow == "remote") {
-      nix.settings.max-jobs = lib.mkForce 0;
       nix.settings.fallback = lib.mkForce false;
-      nix.distributedBuilds = lib.mkForce (config.nix.buildMachines != [ ]);
+      nix.settings.substitute = lib.mkForce true;
+      nix.distributedBuilds = lib.mkForce true;
+      # nix.buildMachines = lib.mkForce [ ]; # should realistically not be empty, but not enforced
     })
 
     (lib.mkIf (cfg.allow == "none") {
-      nix.settings.max-jobs = lib.mkForce 0;
-      nix.settings.builders = lib.mkForce "";
       nix.settings.fallback = lib.mkForce false;
-
+      nix.settings.substitute = lib.mkForce true;
       nix.distributedBuilds = lib.mkForce false;
       nix.buildMachines = lib.mkForce [ ];
     })

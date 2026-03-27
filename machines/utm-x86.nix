@@ -9,6 +9,7 @@
 
     ../hardware/utm-x86.nix
     ../modules/server.nix
+    ../modules/builders.nix
     ../modules/mmdb.nix
 
     ../users/root.nix
@@ -25,6 +26,8 @@
     ../modules/db-spacetimedb.nix
     ../modules/formcha.nix
   ];
+
+  my.builders.allow = "remote";
 
   networking.firewall.allowedTCPPorts = [
     80 # angie
@@ -103,26 +106,11 @@
     # psql -h /run/postgres/main -U postgres
     unixSocketDir = "/run/postgres/main";
 
-    databases = [ "main" ];
+    # databases = [ "main" ];
   };
 
   environment.systemPackages = [
     pkgs.postgresql_18
   ];
-
-  # services.my.postgres.instances.main = {
-  #   enable = true;
-  #   # listenAddress = "0.0.0.0";
-  #   # port = 5432;
-  #   # unixSocketDir = "/run/postgres/main";
-  #   # databases = [ "main" ];
-  # };
-  # services.my.postgres.instances.replica = {
-  #   enable = true;
-  #   # listenAddress = "0.0.0.0";
-  #   # port = 5432;
-  #   # unixSocketDir = "/run/postgres/replica";
-  #   # databases = [ "main" ];
-  # };
 
 }
