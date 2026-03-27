@@ -9,6 +9,7 @@
 
     ../hardware/utm-x86.nix
     ../modules/server.nix
+    ../modules/builders.nix
     ../modules/mmdb.nix
 
     ../users/root.nix
@@ -25,6 +26,8 @@
     ../modules/db-spacetimedb.nix
     ../modules/formcha.nix
   ];
+
+  my.builders.enabled = false;
 
   networking.firewall.allowedTCPPorts = [
     80 # angie
@@ -67,9 +70,9 @@
     };
   };
 
-  services.my.spacetimedb = {
-    enable = true;
-  };
+  # services.my.spacetimedb = {
+  #   enable = true;
+  # };
 
   services.my.sqld = {
     enable = true;

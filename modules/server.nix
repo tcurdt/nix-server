@@ -1,5 +1,8 @@
 { pkgs, ... }:
 {
+  imports = [
+  ];
+
   programs.bash.enable = true;
   security.sudo.wheelNeedsPassword = false;
   security.sudo.execWheelOnly = true;
@@ -264,6 +267,7 @@
     pkgs.nano
     pkgs.curl
     pkgs.gitMinimal
+    pkgs.just
 
     pkgs.nh
     pkgs.nvd
