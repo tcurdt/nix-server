@@ -94,10 +94,14 @@
 
   services.my.postgres = {
     enable = true;
+
     # listenAddress = "0.0.0.0";
     # port = 5432;
+
+    # psql -h /run/postgres/main -U postgres
     unixSocketDir = "/run/postgres/main";
-    # databases = [ "main" ];
+
+    databases = [ "main" ];
   };
 
   # services.my.postgres.instances.main = {

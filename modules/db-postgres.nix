@@ -148,7 +148,7 @@ in
 
         package = lib.mkOption {
           type = lib.types.package;
-          default = pkgs.postgresql;
+          default = pkgs.postgresql_18;
           defaultText = lib.literalExpression "pkgs.postgresql";
           description = "Default PostgreSQL package for instances.";
         };
