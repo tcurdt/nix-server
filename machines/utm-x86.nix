@@ -22,10 +22,12 @@
     ../modules/authelia.nix
 
     ../modules/db-postgres.nix
-    ../modules/db-sqld.nix
-    ../modules/db-spacetimedb.nix
+
     ../modules/formcha.nix
-    ../modules/litestream.nix
+
+    # ../modules/litestream.nix
+    # ../modules/db-sqld.nix
+    # ../modules/db-spacetimedb.nix
   ];
 
   my.builders.allow = "remote";
@@ -35,8 +37,8 @@
     80 # angie
     443 # angie
     # 5432 # postgres
-    # 8081 # sqld main http
-    # 5001 # sqld main grpc
+    # 8081 # sqld http
+    # 5001 # sqld grpc
   ];
 
   services.my.mmdb = {
@@ -72,26 +74,26 @@
     };
   };
 
-  services.my.sqld = {
-    enable = true;
-    primary = true; # false for replica
-    listenAddress = "0.0.0.0";
-    ports = {
-      http = 8081;
-      grpc = 5001;
-    };
-    ca = {
-      cert = "/secrets/sqld_ca_cert.pem";
-      # key = "/secrets/sqld_ca_key.pem";
-    };
-    server = {
-      cert = "/secrets/sqld_server_cert.pem";
-      key = "/secrets/sqld_server_key.pem";
-    };
-    client = {
-      key = "/secrets/sqld_client_key.pem";
-    };
-  };
+  # services.my.sqld = {
+  #   enable = true;
+  #   primary = true; # false for replica
+  #   listenAddress = "0.0.0.0";
+  #   ports = {
+  #     http = 8081;
+  #     grpc = 5001;
+  #   };
+  #   ca = {
+  #     cert = "/secrets/sqld_ca_cert.pem";
+  #     # key = "/secrets/sqld_ca_key.pem";
+  #   };
+  #   server = {
+  #     cert = "/secrets/sqld_server_cert.pem";
+  #     key = "/secrets/sqld_server_key.pem";
+  #   };
+  #   client = {
+  #     key = "/secrets/sqld_client_key.pem";
+  #   };
+  # };
 
   # services.my.litestream = {
   #   enable = true;
@@ -140,7 +142,18 @@
     # psql -h /run/postgres/main -U postgres
     unixSocketDir = "/run/postgres/main";
 
-    # databases = [ "main" ];
+    databases = [
+      "main"
+      "foo"
+    ];
+
+    settings = {
+      shared_buffers = "256MB";
+      effective_cache_size = "1GB";
+      work_mem = "4MB";
+      log_connections = true;
+      log_statement = "ddl";
+    };
   };
 
   environment.systemPackages = [
