@@ -25,16 +25,18 @@
     ../modules/db-sqld.nix
     ../modules/db-spacetimedb.nix
     ../modules/formcha.nix
+    ../modules/litestream.nix
   ];
 
   my.builders.allow = "remote";
 
   networking.firewall.allowedTCPPorts = [
+    # 53 # dns
     80 # angie
     443 # angie
     # 5432 # postgres
-    8081 # sqld main http
-    5001 # sqld main grpc
+    # 8081 # sqld main http
+    # 5001 # sqld main grpc
   ];
 
   services.my.mmdb = {
@@ -70,10 +72,6 @@
     };
   };
 
-  # services.my.spacetimedb = {
-  #   enable = true;
-  # };
-
   services.my.sqld = {
     enable = true;
     primary = true; # false for replica
@@ -94,6 +92,42 @@
       key = "/secrets/sqld_client_key.pem";
     };
   };
+
+  # services.my.litestream = {
+  #   enable = true;
+  #   settings = {
+  #     addr = "0.0.0.0:9090";
+  #     accessKeyId = "S3_ACCESS_KEY_ID";
+  #     secretAccessKey = "S3_SECRET_ACCESS_KEY";
+  #     forcePathStyle = true;
+  #     endpoint = "S3_ENDPOINT";
+  #     logging = {
+  #       level = "info";
+  #     };
+  #     levels = [
+  #       { interval = "15m"; }
+  #     ];
+  #     l0Retention = "30m";
+  #     l0RetentionCheckInterval = "5m";
+  #     snapshot = {
+  #       interval = "24h";
+  #       retention = "168h";
+  #     };
+  #     dbs = [
+  #       {
+  #         path = "/data/account.sqlite";
+  #         monitorInterval = "5s";
+  #         checkpointInterval = "5m";
+  #         minCheckpointPageCount = 10000;
+  #         truncatePageN = 0;
+  #         replica = {
+  #           url = "s3://BUCKET/litestream/account.sqlite";
+  #           syncInterval = "5s";
+  #         };
+  #       }
+  #     ];
+  #   };
+  # };
 
   services.my.postgres = {
     enable = true;

@@ -6,12 +6,12 @@
 }:
 
 let
-  # Required files for primary mode:
+  # required files for primary mode:
   #   /secrets/sqld_ca_cert.pem
   #   /secrets/sqld_server_key.pem
   #   /secrets/sqld_server_cert.pem
   #
-  # Minimal local generation example:
+  # minimal config example:
   #   openssl genrsa -out /secrets/sqld_ca_key.pem 4096
   #   openssl req -x509 -new -nodes -key /secrets/sqld_ca_key.pem -sha256 -days 3650 -out /secrets/sqld_ca_cert.pem -subj "/CN=sqld-ca"
   #   openssl genrsa -out /secrets/sqld_server_key.pem 2048
@@ -128,9 +128,9 @@ let
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         ExecStart = mkExecStart instance instanceCfg;
-        ExecStartPre = lib.optional (requiredSecrets != [ ]) (
-          "${mkSecretCheckScript instance requiredSecrets} ${lib.escapeShellArgs requiredSecrets}"
-        );
+        ExecStartPre = lib.optional (
+          requiredSecrets != [ ]
+        ) "${mkSecretCheckScript instance requiredSecrets} ${lib.escapeShellArgs requiredSecrets}";
         Type = "simple";
         User = instanceCfg.user;
         Group = instanceCfg.user;
