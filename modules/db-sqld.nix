@@ -72,14 +72,16 @@ let
     '';
 
   mkExecStart =
-    instanceCfg:
+    instance: instanceCfg:
     let
       httpAddr = "${instanceCfg.listenAddress}:${toString instanceCfg.ports.http}";
       grpcAddr = "${instanceCfg.listenAddress}:${toString instanceCfg.ports.grpc}";
+      stateDir = "/var/lib/sqld/${instance}";
     in
     lib.concatStringsSep " " (
       [
         "${pkgs.sqld}/bin/sqld"
+        "--db-path ${stateDir}/data.sqld"
         "--http-listen-addr ${httpAddr}"
         "--grpc-listen-addr ${grpcAddr}"
       ]
@@ -125,7 +127,7 @@ let
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
-        ExecStart = mkExecStart instanceCfg;
+        ExecStart = mkExecStart instance instanceCfg;
         ExecStartPre = lib.optional (requiredSecrets != [ ]) (
           "${mkSecretCheckScript instance requiredSecrets} ${lib.escapeShellArgs requiredSecrets}"
         );
@@ -133,6 +135,7 @@ let
         User = instanceCfg.user;
         Group = instanceCfg.user;
         StateDirectory = "sqld/${instance}";
+        StateDirectoryMode = "0750";
         WorkingDirectory = "/var/lib/sqld/${instance}";
         Restart = "always";
       };

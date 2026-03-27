@@ -27,6 +27,9 @@ let
       };
 
   enabledInstances = lib.filterAttrs (_: instance: instance.enable) effectiveInstances;
+  enabledUsers = lib.unique (
+    map (instanceCfg: instanceCfg.user) (builtins.attrValues enabledInstances)
+  );
 
   mkSocketPath = instance: "/run/formcha/${instance}.sock";
 
@@ -49,13 +52,10 @@ let
     serviceConfig = {
       ExecStart = "${package}/bin/formcha";
       Type = "simple";
-      Environment = [ "FORMCHA_IDLE_TIMEOUT=30s" ];
-      EnvironmentFile = instanceCfg.envFile;
-      DynamicUser = instanceCfg.user == null;
-    }
-    // lib.optionalAttrs (instanceCfg.user != null) {
       User = instanceCfg.user;
       Group = instanceCfg.user;
+      Environment = [ "FORMCHA_IDLE_TIMEOUT=30s" ];
+      EnvironmentFile = instanceCfg.envFile;
     };
   };
 in
@@ -76,9 +76,9 @@ in
           };
 
           user = lib.mkOption {
-            type = lib.types.nullOr lib.types.str;
-            default = null;
-            description = "Default system user/group used by formcha instances. Null uses DynamicUser.";
+            type = lib.types.str;
+            default = "formcha";
+            description = "Default system user/group for formcha instances.";
           };
 
           url = lib.mkOption {
@@ -112,7 +112,7 @@ in
                     user = lib.mkOption {
                       type = lib.types.nullOr lib.types.str;
                       default = null;
-                      description = "System user/group for this instance. Null inherits services.my.formcha.user and otherwise uses DynamicUser.";
+                      description = "System user/group for this instance. Null inherits services.my.formcha.user.";
                     };
 
                     url = lib.mkOption {
@@ -137,6 +137,18 @@ in
       assertion = instanceCfg.envFile != null;
       message = "services.my.formcha.instances.${instance}: envFile is required for enabled instances (or set services.my.formcha.envFile).";
     }) enabledInstances;
+
+    users.groups = lib.listToAttrs (map (user: lib.nameValuePair user { }) enabledUsers);
+
+    users.users = lib.listToAttrs (
+      map (
+        user:
+        lib.nameValuePair user {
+          isSystemUser = true;
+          group = user;
+        }
+      ) enabledUsers
+    );
 
     systemd.sockets = lib.mapAttrs' (
       instance: instanceCfg: lib.nameValuePair "formcha-${instance}" (mkSocket instance instanceCfg)

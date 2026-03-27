@@ -53,8 +53,8 @@ let
       baseSettings = {
         port = instanceCfg.port;
       }
-      // lib.optionalAttrs (instanceCfg.listenAddress != null) {
-        listen_addresses = instanceCfg.listenAddress;
+      // {
+        listen_addresses = if instanceCfg.listenAddress != null then instanceCfg.listenAddress else "";
       }
       // lib.optionalAttrs (instanceCfg.unixSocketDir != null) {
         unix_socket_directories = instanceCfg.unixSocketDir;
