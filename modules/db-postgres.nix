@@ -15,10 +15,10 @@ let
     package = inheritOr instanceCfg.package cfg.package;
     listenAddress = inheritOr instanceCfg.listenAddress cfg.listenAddress;
     port = inheritOr instanceCfg.port cfg.port;
-    dataDir = inheritOr instanceCfg.dataDir (inheritOr cfg.dataDir "/var/lib/postgres/${name}");
-    unixSocketDir = inheritOr instanceCfg.unixSocketDir (
-      inheritOr cfg.unixSocketDir "/run/postgres/${name}"
+    dataDir = inheritOr instanceCfg.dataDir (
+      inheritOr cfg.dataDir "/var/lib/postgres/${name}/${lib.versions.major instanceCfg.package.version}"
     );
+    unixSocketDir = inheritOr instanceCfg.unixSocketDir cfg.unixSocketDir;
     initdbArgs = inheritOr instanceCfg.initdbArgs cfg.initdbArgs;
     settings = inheritOr instanceCfg.settings cfg.settings;
     extraHba = inheritOr instanceCfg.extraHba cfg.extraHba;
@@ -51,8 +51,12 @@ let
         else
           "'${lib.replaceStrings [ "'" ] [ "''" ] v}'";
       baseSettings = {
-        listen_addresses = instanceCfg.listenAddress;
         port = instanceCfg.port;
+      }
+      // lib.optionalAttrs (instanceCfg.listenAddress != null) {
+        listen_addresses = instanceCfg.listenAddress;
+      }
+      // lib.optionalAttrs (instanceCfg.unixSocketDir != null) {
         unix_socket_directories = instanceCfg.unixSocketDir;
       };
       mergedSettings = baseSettings // instanceCfg.settings;
@@ -60,24 +64,32 @@ let
     lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "${k} = ${renderValue v}") mergedSettings);
 
   mkHba = instanceCfg: ''
-    local   all             all                                     trust
-    host    all             all             127.0.0.1/32            scram-sha-256
-    host    all             all             ::1/128                 scram-sha-256
+    ${lib.optionalString (
+      instanceCfg.unixSocketDir != null
+    ) ''local   all             all                                     trust''}
+    ${lib.optionalString (instanceCfg.listenAddress != null) ''
+      host    all             all             127.0.0.1/32            scram-sha-256
+      host    all             all             ::1/128                 scram-sha-256''}
     ${instanceCfg.extraHba}
   '';
 
   mkCreateDbScript =
     instance: instanceCfg:
     let
+      hostArgs =
+        if instanceCfg.unixSocketDir != null then
+          ''-h "${instanceCfg.unixSocketDir}" -p "${toString instanceCfg.port}"''
+        else
+          ''-h "${instanceCfg.listenAddress}" -p "${toString instanceCfg.port}"'';
       mkDbClause = db: ''
-        if ! "${instanceCfg.package}/bin/psql" -h "${instanceCfg.unixSocketDir}" -p "${toString instanceCfg.port}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '${db}'" | grep -q 1; then
-          "${instanceCfg.package}/bin/createdb" -h "${instanceCfg.unixSocketDir}" -p "${toString instanceCfg.port}" "${db}"
+        if ! "${instanceCfg.package}/bin/psql" ${hostArgs} -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '${db}'" | grep -q 1; then
+          "${instanceCfg.package}/bin/createdb" ${hostArgs} "${db}"
         fi
       '';
     in
     pkgs.writeShellScript "postgres-${instance}-create-databases" ''
       set -euo pipefail
-      ${instanceCfg.package}/bin/pg_isready -h "${instanceCfg.unixSocketDir}" -p "${toString instanceCfg.port}" >/dev/null
+      ${instanceCfg.package}/bin/pg_isready ${hostArgs} >/dev/null
       ${lib.concatMapStringsSep "\n" mkDbClause instanceCfg.databases}
     '';
 
@@ -142,9 +154,9 @@ in
         };
 
         listenAddress = lib.mkOption {
-          type = lib.types.str;
-          default = "127.0.0.1";
-          description = "Default address to bind PostgreSQL instances to.";
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "Default address to bind PostgreSQL instances to. Null disables TCP.";
         };
 
         port = lib.mkOption {
@@ -162,7 +174,7 @@ in
         unixSocketDir = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = null;
-          description = "Default unix socket directory for instances. Null uses /run/postgres/<instance>.";
+          description = "Default unix socket directory for instances. Null disables Unix socket.";
         };
 
         initdbArgs = lib.mkOption {
@@ -245,7 +257,7 @@ in
                 unixSocketDir = lib.mkOption {
                   type = lib.types.nullOr lib.types.str;
                   default = null;
-                  description = "Unix socket directory for this instance. Null inherits services.my.postgres.unixSocketDir, else /run/postgres/<instance>.";
+                  description = "Unix socket directory for this instance. Null inherits services.my.postgres.unixSocketDir, disabling Unix socket if that is also null.";
                 };
 
                 initdbArgs = lib.mkOption {
@@ -288,6 +300,11 @@ in
   };
 
   config = lib.mkIf (enabledInstances != { }) {
+    assertions = lib.mapAttrsToList (instance: instanceCfg: {
+      assertion = instanceCfg.listenAddress != null || instanceCfg.unixSocketDir != null;
+      message = "postgres instance '${instance}': at least one of listenAddress or unixSocketDir must be set.";
+    }) enabledInstances;
+
     users.groups = lib.listToAttrs (map (user: lib.nameValuePair user { }) enabledUsers);
 
     users.users = lib.listToAttrs (
@@ -301,10 +318,14 @@ in
       ) enabledUsers
     );
 
-    systemd.tmpfiles.rules = lib.mapAttrsToList (
-      instance: instanceCfg:
-      "d ${instanceCfg.unixSocketDir} 0750 ${instanceCfg.user} ${instanceCfg.user} -"
-    ) enabledInstances;
+    systemd.tmpfiles.rules = lib.concatLists (
+      lib.mapAttrsToList (
+        _: instanceCfg:
+        lib.optional (
+          instanceCfg.unixSocketDir != null
+        ) "d ${instanceCfg.unixSocketDir} 0750 ${instanceCfg.user} ${instanceCfg.user} -"
+      ) enabledInstances
+    );
 
     systemd.services = lib.mapAttrs' (
       instance: instanceCfg: lib.nameValuePair "postgres-${instance}" (mkService instance instanceCfg)
