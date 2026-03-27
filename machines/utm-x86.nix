@@ -9,7 +9,6 @@
 
     ../hardware/utm-x86.nix
     ../modules/server.nix
-    ../modules/builders.nix
     ../modules/mmdb.nix
 
     ../users/root.nix
@@ -26,8 +25,6 @@
     ../modules/db-spacetimedb.nix
     ../modules/formcha.nix
   ];
-
-  my.builders.allow = "remote";
 
   networking.firewall.allowedTCPPorts = [
     80 # angie
