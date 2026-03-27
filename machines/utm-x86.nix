@@ -27,7 +27,7 @@
     ../modules/formcha.nix
   ];
 
-  my.builders.enabled = false;
+  my.builders.allow = "remote";
 
   networking.firewall.allowedTCPPorts = [
     80 # angie

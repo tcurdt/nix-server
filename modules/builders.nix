@@ -5,19 +5,38 @@ let
 in
 {
   options.my.builders = {
-    enabled = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Allow building from source. Set to false to only use cached substitutes.";
+    allow = lib.mkOption {
+      type = lib.types.enum [
+        "all"
+        "remote"
+        "none"
+      ];
+      default = "all";
+      description = "Control where builds are allowed: all (local/remote), remote (only remote builders), none (no builds on this machine).";
     };
   };
 
-  config = lib.mkIf (!cfg.enabled) {
-    nix.settings.max-jobs = lib.mkForce 0;
-    nix.settings.builders = lib.mkForce "";
-    nix.settings.fallback = lib.mkForce false;
+  config = lib.mkMerge [
+    (lib.mkIf (cfg.allow == "remote") {
+      assertions = [
+        {
+          assertion = config.nix.buildMachines != [ ];
+          message = "my.builders.allow = \"remote\" requires at least one entry in nix.buildMachines.";
+        }
+      ];
 
-    nix.distributedBuilds = lib.mkForce false;
-    nix.buildMachines = lib.mkForce [ ];
-  };
+      nix.settings.max-jobs = lib.mkForce 0;
+      nix.settings.fallback = lib.mkForce false;
+      nix.distributedBuilds = lib.mkForce true;
+    })
+
+    (lib.mkIf (cfg.allow == "none") {
+      nix.settings.max-jobs = lib.mkForce 0;
+      nix.settings.builders = lib.mkForce "";
+      nix.settings.fallback = lib.mkForce false;
+
+      nix.distributedBuilds = lib.mkForce false;
+      nix.buildMachines = lib.mkForce [ ];
+    })
+  ];
 }
