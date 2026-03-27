@@ -110,10 +110,10 @@ let
       RuntimeDirectoryMode = "0750";
       StateDirectory = "postgres/${instance}";
       StateDirectoryMode = "0700";
-      WorkingDirectory = instanceCfg.dataDir;
       Environment = [ "PGDATA=${instanceCfg.dataDir}" ];
       ExecStartPre = [
-        "+/bin/sh -c 'if [ ! -f \"${instanceCfg.dataDir}/PG_VERSION\" ]; then ${instanceCfg.package}/bin/initdb --pgdata=\"${instanceCfg.dataDir}\" ${lib.escapeShellArgs instanceCfg.initdbArgs}; fi'"
+        "+${pkgs.coreutils}/bin/install -d -m 0700 -o ${instanceCfg.user} -g ${instanceCfg.user} ${instanceCfg.dataDir}"
+        "${pkgs.bash}/bin/sh -c 'if [ ! -f \"${instanceCfg.dataDir}/PG_VERSION\" ]; then ${instanceCfg.package}/bin/initdb --pgdata=\"${instanceCfg.dataDir}\" ${lib.escapeShellArgs instanceCfg.initdbArgs}; fi'"
       ];
       ExecStart = ''
         ${instanceCfg.package}/bin/postgres \
