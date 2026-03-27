@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 {
 
   networking.hostName = "utm-x86";
@@ -95,6 +95,8 @@
   services.my.postgres = {
     enable = true;
 
+    package = pkgs.postgresql_18;
+
     # listenAddress = "0.0.0.0";
     # port = 5432;
 
@@ -103,6 +105,10 @@
 
     databases = [ "main" ];
   };
+
+  environment.systemPackages = [
+    pkgs.postgresql_18
+  ];
 
   # services.my.postgres.instances.main = {
   #   enable = true;
