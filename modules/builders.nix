@@ -18,16 +18,9 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf (cfg.allow == "remote") {
-      assertions = [
-        {
-          assertion = config.nix.buildMachines != [ ];
-          message = "my.builders.allow = \"remote\" requires at least one entry in nix.buildMachines.";
-        }
-      ];
-
       nix.settings.max-jobs = lib.mkForce 0;
       nix.settings.fallback = lib.mkForce false;
-      nix.distributedBuilds = lib.mkForce true;
+      nix.distributedBuilds = lib.mkForce (config.nix.buildMachines != [ ]);
     })
 
     (lib.mkIf (cfg.allow == "none") {
