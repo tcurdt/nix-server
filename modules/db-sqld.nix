@@ -6,11 +6,25 @@
 }:
 
 let
+  # Required files for primary mode:
+  #   /secrets/sqld_ca_cert.pem
+  #   /secrets/sqld_server_key.pem
+  #   /secrets/sqld_server_cert.pem
+  #
+  # Minimal local generation example:
+  #   openssl genrsa -out /secrets/sqld_ca_key.pem 4096
+  #   openssl req -x509 -new -nodes -key /secrets/sqld_ca_key.pem -sha256 -days 3650 -out /secrets/sqld_ca_cert.pem -subj "/CN=sqld-ca"
+  #   openssl genrsa -out /secrets/sqld_server_key.pem 2048
+  #   openssl req -new -key /secrets/sqld_server_key.pem -out /tmp/sqld_server.csr -subj "/CN=sqld"
+  #   openssl x509 -req -in /tmp/sqld_server.csr -CA /secrets/sqld_ca_cert.pem -CAkey /secrets/sqld_ca_key.pem -CAcreateserial -out /secrets/sqld_server_cert.pem -days 825 -sha256
+  #   rm -f /tmp/sqld_server.csr
+
   cfg = config.services.my.sqld;
   inheritOr = value: fallback: if value == null then fallback else value;
 
   normalizeInstance = _name: instanceCfg: {
     enable = inheritOr instanceCfg.enable cfg.enable;
+    user = inheritOr instanceCfg.user cfg.user;
     primary = inheritOr instanceCfg.primary cfg.primary;
     listenAddress = inheritOr instanceCfg.listenAddress cfg.listenAddress;
     ports = {
@@ -41,6 +55,21 @@ let
       };
 
   enabledInstances = lib.filterAttrs (_: instance: instance.enable) effectiveInstances;
+  enabledUsers = lib.unique (
+    map (instanceCfg: instanceCfg.user) (builtins.attrValues enabledInstances)
+  );
+
+  mkSecretCheckScript =
+    instance: requiredSecrets:
+    pkgs.writeShellScript "sqld-${instance}-check-secrets" ''
+      set -euo pipefail
+      for path in "$@"; do
+        if [ ! -r "$path" ]; then
+          echo "sqld ${instance}: missing or unreadable required secret: $path" >&2
+          exit 1
+        fi
+      done
+    '';
 
   mkExecStart =
     instanceCfg:
@@ -76,19 +105,38 @@ let
       ]
     );
 
-  mkService = instance: instanceCfg: {
-    description = "sqld ${instance} server";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      ExecStart = mkExecStart instanceCfg;
-      Type = "simple";
-      DynamicUser = true;
-      StateDirectory = "sqld/${instance}";
-      WorkingDirectory = "/var/lib/sqld/${instance}";
-      Restart = "always";
+  mkService =
+    instance: instanceCfg:
+    let
+      requiredSecrets =
+        lib.optionals instanceCfg.primary [
+          instanceCfg.ca.cert
+          instanceCfg.server.cert
+          instanceCfg.server.key
+        ]
+        ++ lib.optionals (!instanceCfg.primary && instanceCfg.client.cert != null) [
+          instanceCfg.client.cert
+        ]
+        ++ lib.optionals (!instanceCfg.primary && instanceCfg.client.key != null) [ instanceCfg.client.key ]
+        ++ lib.optionals (!instanceCfg.primary && instanceCfg.ca.cert != null) [ instanceCfg.ca.cert ];
+    in
+    {
+      description = "sqld ${instance} server";
+      after = [ "network.target" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        ExecStart = mkExecStart instanceCfg;
+        ExecStartPre = lib.optional (requiredSecrets != [ ]) (
+          "${mkSecretCheckScript instance requiredSecrets} ${lib.escapeShellArgs requiredSecrets}"
+        );
+        Type = "simple";
+        User = instanceCfg.user;
+        Group = instanceCfg.user;
+        StateDirectory = "sqld/${instance}";
+        WorkingDirectory = "/var/lib/sqld/${instance}";
+        Restart = "always";
+      };
     };
-  };
 
   replicaAssertions = lib.mapAttrsToList (instance: instanceCfg: {
     assertion =
@@ -103,6 +151,12 @@ in
     type = lib.types.submodule {
       options = {
         enable = lib.mkEnableOption "sqld";
+
+        user = lib.mkOption {
+          type = lib.types.str;
+          default = "sqld";
+          description = "Default system user/group for sqld instances.";
+        };
 
         primary = lib.mkOption {
           type = lib.types.bool;
@@ -178,6 +232,12 @@ in
                   type = lib.types.nullOr lib.types.bool;
                   default = null;
                   description = "Whether this instance is enabled. Null inherits services.my.sqld.enable.";
+                };
+
+                user = lib.mkOption {
+                  type = lib.types.nullOr lib.types.str;
+                  default = null;
+                  description = "System user/group for this instance. Null inherits services.my.sqld.user.";
                 };
 
                 primary = lib.mkOption {
@@ -260,6 +320,19 @@ in
           || (instanceCfg.server.cert != "" && instanceCfg.server.key != "" && instanceCfg.ca.cert != null);
         message = "services.my.sqld.instances.${instance}: primary instances require server.cert, server.key and ca.cert.";
       }) enabledInstances;
+
+    users.groups = lib.listToAttrs (map (user: lib.nameValuePair user { }) enabledUsers);
+
+    users.users = lib.listToAttrs (
+      map (
+        user:
+        lib.nameValuePair user {
+          isSystemUser = true;
+          group = user;
+          home = "/var/lib/sqld";
+        }
+      ) enabledUsers
+    );
 
     systemd.services = lib.mapAttrs' (
       instance: instanceCfg: lib.nameValuePair "sqld-${instance}" (mkService instance instanceCfg)
