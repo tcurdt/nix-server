@@ -1,67 +1,241 @@
 {
-  # pkgs,
+  pkgs,
+  lib,
+  config,
   ...
 }:
-{
 
-  # services.nginx.enable = true;
-  # services.nginx.virtualHosts."myhost.org" = {
-  #   addSSL = true;
-  #   enableACME = true;
-  #   root = "/var/www/myhost.org";
-  # };
-  # security.acme = {
-  #   acceptTerms = true;
-  #   defaults.email = "foo@bar.com";
-  #   "blog.example.com".email = "youremail@address.com";
-  # };
+let
+  cfg = config.services.my.angie;
 
-  services.nginx = {
-    enable = true;
-
-    recommendedGzipSettings = true;
-    recommendedOptimisation = true;
-    recommendedTlsSettings = true;
-    recommendedProxySettings = true;
-
-    #sslCiphers = "AES256+EECDH:AES256+EDH:!aNULL";
-
-    appendHttpConfig = ''
-      #add_header Content-Security-Policy "script-src 'self'; object-src 'none'; base-uri 'none';" always;
-      #add_header 'Referrer-Policy' 'origin-when-cross-origin';
-      #add_header X-Frame-Options DENY;
-      #add_header X-Content-Type-Options nosniff;
-      #proxy_cookie_path / "/; secure; HttpOnly; SameSite=strict";
+  # Generate the internal Authelia authz location for a vhost
+  mkAutheliaLocation = port: {
+    extraConfig = ''
+      internal;
+      proxy_pass http://127.0.0.1:${toString port}/api/authz/auth-request;
+      proxy_set_header X-Original-Method $request_method;
+      proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+      proxy_set_header X-Forwarded-For $remote_addr;
+      proxy_set_header Content-Length "";
+      proxy_pass_request_body off;
     '';
-
-    # virtualHosts."example.com" =  {
-    #   enableACME = true;
-    #   forceSSL = true;
-    #   locations."/" = {
-    #     proxyPass = "http://127.0.0.1:12345";
-    #     proxyWebsockets = true;
-    #     extraConfig =
-    #       # required when the target is also TLS server with multiple hosts
-    #       "proxy_ssl_server_name on;" +
-    #       # required when the server wants to use HTTP Authentication
-    #       "proxy_pass_header Authorization;"
-    #       ;
-    #   };
-    # };
-
-    # virtualHosts = let
-    #   base = locations: {
-    #     inherit locations;
-    #     forceSSL = true;
-    #     enableACME = true;
-    #   };
-    #   proxy = port: base {
-    #     "/".proxyPass = "http://127.0.0.1:" + toString(port) + "/";
-    #   };
-    # in {
-    #   "example.com" = proxy 3000 // { default = true; };
-    # };
-
   };
 
+  # Inject auth_request into a location's extraConfig
+  mkProtectedExtraConfig = userExtraConfig: ''
+    auth_request /internal/authelia/authz;
+    auth_request_set $redirection_url $upstream_http_location;
+    error_page 401 =302 $redirection_url;
+    ${userExtraConfig}
+  '';
+
+  # Sanitize a location path into a valid nginx named-location suffix
+  # e.g. "/" -> "root", "/api/foo" -> "api_foo"
+  pathToSlug =
+    path:
+    let
+      stripped = lib.removePrefix "/" path;
+      slug = builtins.replaceStrings [ "/" "-" "." ] [ "_" "_" "_" ] stripped;
+    in
+    if slug == "" then "root" else slug;
+
+  # Convert a single angie location to a set of nginx location attrsets.
+  # Returns an attrset { main, extra } where extra holds any auxiliary named
+  # locations needed (e.g. @content_* for protected returns).
+  mkNginxLocations =
+    protect: path: loc:
+    let
+      slug = pathToSlug path;
+      namedContent = "@content_${slug}";
+
+      # When protected + return: the return must go into a named location so that
+      # auth_request (access phase) runs before rewrite-phase `return`.
+      useNamedReturn = protect && loc.return != null;
+
+      returnLine = lib.optionalString (loc.return != null && !useNamedReturn) ''
+        default_type text/plain;
+        return ${loc.return};
+      '';
+      proxyBlock = lib.optionalString (loc.proxyPass != null) ''
+        proxy_pass ${loc.proxyPass};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        ${lib.optionalString loc.proxyWebsockets ''
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+        ''}
+      '';
+      # For useNamedReturn: replace return with try_files -> named location
+      tryFilesLine = lib.optionalString useNamedReturn ''
+        try_files /nonexistent ${namedContent};
+      '';
+      baseExtra = lib.concatStringsSep "\n" (
+        lib.filter (s: s != "") [
+          returnLine
+          proxyBlock
+          tryFilesLine
+          loc.extraConfig
+        ]
+      );
+
+      mainLocation = {
+        extraConfig = if protect then mkProtectedExtraConfig baseExtra else baseExtra;
+      };
+
+      # Named location that holds the actual return content (no auth here — auth already passed)
+      contentLocation = lib.optionalAttrs useNamedReturn {
+        ${namedContent} = {
+          extraConfig = ''
+            default_type text/plain;
+            return ${loc.return};
+          '';
+        };
+      };
+    in
+    {
+      main = {
+        ${path} = mainLocation;
+      };
+      extra = contentLocation;
+    };
+
+  # Convert a single angie vhost to a nginx virtualHost attrset
+  mkNginxVhost =
+    name: vhost:
+    let
+      protect = vhost.authelia != null;
+      port = if protect then vhost.authelia.port else null;
+
+      locationResults = lib.mapAttrs (mkNginxLocations protect) vhost.locations;
+      userLocations = lib.foldlAttrs (
+        acc: _: r:
+        acc // r.main
+      ) { } locationResults;
+      extraLocations = lib.foldlAttrs (
+        acc: _: r:
+        acc // r.extra
+      ) { } locationResults;
+
+      autheliaLocation = lib.optionalAttrs protect {
+        "/internal/authelia/authz" = mkAutheliaLocation port;
+      };
+      allLocations = autheliaLocation // userLocations // extraLocations;
+    in
+    {
+      forceSSL = vhost.forceSSL;
+      sslCertificate = lib.mkIf vhost.selfSigned "/var/lib/nginx/${name}.crt";
+      sslCertificateKey = lib.mkIf vhost.selfSigned "/var/lib/nginx/${name}.key";
+      locations = allLocations;
+    };
+
+in
+{
+  imports = [
+    ./nginx-selfsigned.nix
+  ];
+
+  options.services.my.angie = {
+
+    virtualHosts = lib.mkOption {
+      default = { };
+      description = "Virtual host configurations.";
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+
+            forceSSL = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+            };
+
+            selfSigned = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Generate and use a self-signed certificate for this vhost.";
+            };
+
+            authelia = lib.mkOption {
+              default = null;
+              description = ''
+                Authelia instance to use for forward auth on this vhost.
+                Pass the services.my.authelia attrset directly.
+                When set, all locations on this vhost require authentication.
+              '';
+              type = lib.types.nullOr (
+                lib.types.submodule {
+                  freeformType = lib.types.attrsOf lib.types.anything;
+                  options = {
+                    port = lib.mkOption {
+                      type = lib.types.port;
+                    };
+                    url = lib.mkOption {
+                      type = lib.types.str;
+                    };
+                  };
+                }
+              );
+            };
+
+            locations = lib.mkOption {
+              default = { };
+              description = "Location configurations.";
+              type = lib.types.attrsOf (
+                lib.types.submodule {
+                  options = {
+                    return = lib.mkOption {
+                      type = lib.types.nullOr lib.types.str;
+                      default = null;
+                      description = "Nginx return directive argument (e.g. '200 \"hello\\n\"').";
+                    };
+                    proxyPass = lib.mkOption {
+                      type = lib.types.nullOr lib.types.str;
+                      default = null;
+                      description = "Upstream URL to proxy to.";
+                    };
+                    proxyWebsockets = lib.mkOption {
+                      type = lib.types.bool;
+                      default = false;
+                    };
+                    extraConfig = lib.mkOption {
+                      type = lib.types.lines;
+                      default = "";
+                      description = "Raw nginx config appended to this location block.";
+                    };
+                  };
+                }
+              );
+            };
+
+          };
+        }
+      );
+    };
+  };
+
+  # --------------------------------------------------------------------------
+  # Config
+  # --------------------------------------------------------------------------
+  config = lib.mkIf (cfg.virtualHosts != { }) {
+
+    services.nginx = {
+      enable = true;
+      package = pkgs.angie;
+
+      virtualHosts = lib.mapAttrs mkNginxVhost cfg.virtualHosts;
+    };
+
+    services.nginx-selfsigned.domains = lib.mapAttrsToList (name: _: name) (
+      lib.filterAttrs (_: v: v.selfSigned) cfg.virtualHosts
+    );
+
+    systemd.tmpfiles.rules = [
+      "d /var/lib/nginx 0750 nginx nginx -"
+      "d /var/lib/nginx/acme 0700 nginx nginx -"
+    ];
+
+    systemd.services.nginx.serviceConfig.ReadWritePaths = [ "/var/lib/nginx" ];
+  };
 }

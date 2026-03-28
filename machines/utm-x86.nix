@@ -18,7 +18,7 @@
 
     { users.users.root.password = "secret"; }
 
-    ../modules/angie.nix
+    ../modules/nginx.nix
     ../modules/authelia.nix
 
     ../modules/db-postgres.nix
@@ -43,7 +43,7 @@
 
   services.my.mmdb = {
     enable = true;
-    days = 3;
+    # daysBetweenUpdates = 3;
   };
 
   services.my.authelia = {
@@ -69,9 +69,7 @@
 
   services.my.formcha = {
     enable = true;
-    instances.main = {
-      envFile = "/secrets/formcha.env";
-    };
+    envFile = "/secrets/formcha.env";
   };
 
   # services.my.sqld = {

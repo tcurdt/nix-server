@@ -14,9 +14,9 @@ in
   options.services.my.mmdb = {
     enable = lib.mkEnableOption "mmdb refresh";
 
-    days = lib.mkOption {
+    daysBetweenUpdates = lib.mkOption {
       type = lib.types.int;
-      default = 1;
+      default = 3;
       description = "Refresh mmdb when the local file is older than this many days.";
     };
   };
@@ -28,7 +28,7 @@ in
 
     systemd.services.mmdb-fetch = {
 
-      description = "download mmdb if missing or older than ${toString cfg.days} days";
+      description = "download mmdb if missing or older than ${toString cfg.daysBetweenUpdates} days";
       serviceConfig.Type = "oneshot";
 
       path = with pkgs; [
@@ -50,7 +50,7 @@ in
           exec curl -fL -o "$file" "$url"
         fi
 
-        if find "$file" -mtime +${toString cfg.days} | grep -q .; then
+        if find "$file" -mtime +${toString cfg.daysBetweenUpdates} | grep -q .; then
           exec curl -fL -z "$file" -o "$file" "$url"
         fi
       '';
