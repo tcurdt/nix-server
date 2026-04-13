@@ -11,7 +11,7 @@
 
   imports = [
 
-    ../hardware/hetzner.nix
+    ../hardware/hetzner-efi.nix
     ../modules/server.nix
     ../modules/builders.nix
     ../modules/mmdb.nix
