@@ -13,10 +13,21 @@
 
     ../hardware/hetzner.nix
     ../modules/server.nix
+    ../modules/builders.nix
+    ../modules/mmdb.nix
 
     ../users/root.nix
     ../users/ops.nix
     { ops.keyFiles = [ ../keys/tcurdt.pub ]; }
+
+    { users.users.root.password = "secret"; }
+
+    ../modules/nginx.nix
+    ../modules/authelia.nix
+
+    ../modules/db-postgres.nix
+
+    ../modules/formcha.nix
 
     # ../modules/smtp.nix
 
@@ -290,4 +301,21 @@
     # }
 
   ];
+
+  my.builders.allow = "remote";
+
+  networking.firewall.allowedTCPPorts = [
+    # 53 # dns
+    80 # http
+    443 # https
+    # 5432 # postgres
+    # 8081 # sqld http
+    # 5001 # sqld grpc
+  ];
+
+  services.my.mmdb = {
+    enable = true;
+    # daysBetweenUpdates = 3;
+  };
+
 }

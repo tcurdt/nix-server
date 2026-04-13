@@ -6,7 +6,7 @@
 }:
 
 let
-  cfg = config.services.my.angie;
+  cfg = config.services.my.nginx;
 
   # Generate the internal Authelia authz location for a vhost
   mkAutheliaLocation = port: {
@@ -39,7 +39,7 @@ let
     in
     if slug == "" then "root" else slug;
 
-  # Convert a single angie location to a set of nginx location attrsets.
+  # Convert a single nginx location to a set of nginx location attrsets.
   # Returns an attrset { main, extra } where extra holds any auxiliary named
   # locations needed (e.g. @content_* for protected returns).
   mkNginxLocations =
@@ -102,7 +102,7 @@ let
       extra = contentLocation;
     };
 
-  # Convert a single angie vhost to a nginx virtualHost attrset
+  # convert a single nginx vhost to a nginx virtualHost attrset
   mkNginxVhost =
     name: vhost:
     let
@@ -137,7 +137,7 @@ in
     ./nginx-selfsigned.nix
   ];
 
-  options.services.my.angie = {
+  options.services.my.nginx = {
 
     virtualHosts = lib.mkOption {
       default = { };

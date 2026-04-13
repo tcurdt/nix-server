@@ -34,8 +34,8 @@
 
   networking.firewall.allowedTCPPorts = [
     # 53 # dns
-    80 # angie
-    443 # angie
+    80 # http
+    443 # https
     # 5432 # postgres
     # 8081 # sqld http
     # 5001 # sqld grpc
@@ -51,14 +51,14 @@
     external_url = "https://id.vafer.work";
   };
 
-  services.my.angie = {
+  services.my.nginx = {
     virtualHosts."id.vafer.work" = {
       selfSigned = true;
       locations."/" = {
         proxyPass = config.services.my.authelia.url;
       };
     };
-    virtualHosts."test.vafer.work" = {
+    virtualHosts."formcha.vafer.work" = {
       selfSigned = true;
       authelia = config.services.my.authelia;
       locations."/" = {
@@ -149,13 +149,17 @@
       shared_buffers = "256MB";
       effective_cache_size = "1GB";
       work_mem = "4MB";
-      log_connections = true;
-      log_statement = "ddl";
+      shared_preload_libraries = "pg_stat_statements";
+      log_connections = true; # log connections
+      log_min_duration_statement = 500; # log slow queries
+      log_statement = "ddl"; # log schema changes
+      log_duration = false; # keep it in a single log line
+      log_line_prefix = "%t [%p] %u@%d "; # timestamp, pid, user, db
     };
   };
 
   environment.systemPackages = [
-    pkgs.postgresql_18
+    pkgs.postgresql_18 # psql
   ];
 
 }

@@ -13,7 +13,6 @@
     "flakes"
   ];
 
-  # time.timeZone = "Europe/Berlin";
   time.timeZone = "UTC";
 
   i18n.defaultLocale = "en_US.UTF-8";
@@ -33,7 +32,6 @@
 
   zramSwap.enable = false;
   boot.tmp.cleanOnBoot = true;
-  # boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
   # kernel
 
@@ -111,6 +109,7 @@
   networking.firewall.allowPing = true;
   networking.firewall.logRefusedConnections = false;
   # networking.firewall.trustedInterfaces = [ "docker0" ];
+
   services.fail2ban.enable = true;
 
   # networking.useDHCP = false;

@@ -1,3 +1,5 @@
+set quiet
+
 check:
     nix flake check --all-systems
 

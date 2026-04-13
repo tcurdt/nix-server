@@ -71,19 +71,20 @@
           "entropy"
           "filesystem"
           "loadavg"
-          # "textfile"
-          # "systemd"
+          "textfile"
+          "systemd"
         ];
         # disabledCollectors = [];
       };
-      # systemd = {};
+      # systemd = {
+      # };
       # postgres = {};
       # redis = {};
     };
-    pushgateway = {
-      enable = true;
-      web.listen-address = "127.0.0.1:9091";
-    };
+    # pushgateway = {
+    #   enable = true;
+    #   web.listen-address = "127.0.0.1:9091";
+    # };
   };
 
   environment.systemPackages = [ ];
