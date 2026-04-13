@@ -13,6 +13,7 @@
 
     ../hardware/hetzner-efi.nix
     ../modules/server.nix
+    ../modules/no-registry.nix
     ../modules/builders.nix
     ../modules/mmdb.nix
 
