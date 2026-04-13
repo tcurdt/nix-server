@@ -7,8 +7,8 @@
     home.url = "github:tcurdt/nix-home";
     home.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    comin.url = "github:nlewo/comin";
-    comin.inputs.nixpkgs.follows = "nixpkgs-stable";
+    # comin.url = "github:nlewo/comin";
+    # comin.inputs.nixpkgs.follows = "nixpkgs-stable";
 
     formcha.url = "github:tcurdt/formcha";
     formcha.inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -18,7 +18,7 @@
   outputs =
     {
       nixpkgs-stable,
-      comin,
+      # comin,
       formcha,
       ...
     }@inputs:
@@ -70,8 +70,8 @@
           modules = [
             inputs.home.nixosModules.default
             ./machines/app.nix
-            comin.nixosModules.comin
-            (import ./modules/comin.nix)
+            # comin.nixosModules.comin
+            # (import ./modules/comin.nix)
           ];
         };
 
