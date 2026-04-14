@@ -305,6 +305,8 @@
 
   my.builders.allow = "remote";
 
+  networking.hostId = "7ec474b0";
+
   networking.firewall.allowedTCPPorts = [
     # 53 # dns
     80 # http
