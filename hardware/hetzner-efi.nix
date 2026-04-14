@@ -21,13 +21,62 @@
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
-  fileSystems."/" = {
-    device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
-  };
+  disko.devices = {
+    disk.main = {
+      device = lib.mkDefault "/dev/sda";
+      type = "disk";
+      imageSize = "11G";
+      content = {
+        type = "gpt";
+        partitions = {
+          esp = {
+            size = "256M";
+            type = "EF00";
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+            };
+          };
+          root = {
+            size = "10G";
+            content = {
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/";
+              mountOptions = [ "noatime" ];
+              extraArgs = [
+                "-L"
+                "nixos"
+              ];
+            };
+          };
+          varlib = {
+            size = "100%";
+            content = {
+              type = "zfs";
+              pool = "varlib";
+            };
+          };
+        };
+      };
+    };
 
-  fileSystems."/boot" = {
-    device = "/dev/sda1";
-    fsType = "vfat";
+    zpool.varlib = {
+      type = "zpool";
+      rootFsOptions = {
+        atime = "off";
+        compression = "lz4";
+        xattr = "sa";
+        acltype = "posixacl";
+      };
+      datasets = {
+        data = {
+          type = "zfs_fs";
+          mountpoint = "/var/lib";
+          options.mountpoint = "legacy";
+        };
+      };
+    };
   };
 }

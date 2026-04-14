@@ -13,6 +13,9 @@
     formcha.url = "github:tcurdt/formcha";
     formcha.inputs.nixpkgs.follows = "nixpkgs-stable";
 
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs-stable";
+
   };
 
   outputs =
@@ -20,6 +23,7 @@
       nixpkgs-stable,
       # comin,
       formcha,
+      disko,
       ...
     }@inputs:
     let
@@ -69,6 +73,7 @@
           };
           modules = [
             inputs.home.nixosModules.default
+            inputs.disko.nixosModules.disko
             ./machines/app.nix
             # comin.nixosModules.comin
             # (import ./modules/comin.nix)
