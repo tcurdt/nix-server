@@ -29,6 +29,8 @@ in
     systemd.services.mmdb-fetch = {
 
       description = "download mmdb if missing or older than ${toString cfg.daysBetweenUpdates} days";
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
       serviceConfig.Type = "oneshot";
 
       path = with pkgs; [
@@ -43,15 +45,25 @@ in
 
         file="/var/lib/mmdb/ip66.mmdb"
         url="https://downloads.ip66.dev/db/ip66.mmdb"
+        dir="$(dirname "$file")"
 
-        mkdir -p "$(dirname "$file")"
+        download() {
+          tmp="$(mktemp "$dir/.ip66.mmdb.XXXXXX")"
+          trap 'rm -f "$tmp"' EXIT
+          curl -fL -o "$tmp" "$url"
+          mv -f "$tmp" "$file"
+          trap - EXIT
+        }
+
+        mkdir -p "$dir"
 
         if [ ! -e "$file" ]; then
-          exec curl -fL -o "$file" "$url"
+          download
+          exit 0
         fi
 
         if find "$file" -mtime +${toString cfg.daysBetweenUpdates} | grep -q .; then
-          exec curl -fL -z "$file" -o "$file" "$url"
+          download
         fi
       '';
     };
