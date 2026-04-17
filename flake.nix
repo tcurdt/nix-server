@@ -47,38 +47,38 @@
 
       nixosConfigurations = {
 
-        utm-arm = nixpkgs-stable.lib.nixosSystem {
-          specialArgs = {
-            inherit inputs;
-          };
-          modules = [
-            inputs.home.nixosModules.default
-            ./machines/utm-arm.nix
-          ];
-        };
+        # utm-arm = nixpkgs-stable.lib.nixosSystem {
+        #   specialArgs = {
+        #     inherit inputs;
+        #   };
+        #   modules = [
+        #     inputs.home.nixosModules.default
+        #     ./machines/utm-arm.nix
+        #   ];
+        # };
 
-        utm-x86 = nixpkgs-stable.lib.nixosSystem {
-          specialArgs = {
-            inherit inputs formcha;
-          };
-          modules = [
-            inputs.home.nixosModules.default
-            ./machines/utm-x86.nix
-          ];
-        };
+        # utm-x86 = nixpkgs-stable.lib.nixosSystem {
+        #   specialArgs = {
+        #     inherit inputs formcha;
+        #   };
+        #   modules = [
+        #     inputs.home.nixosModules.default
+        #     ./machines/utm-x86.nix
+        #   ];
+        # };
 
-        app = nixpkgs-stable.lib.nixosSystem {
-          specialArgs = {
-            inherit inputs;
-          };
-          modules = [
-            inputs.home.nixosModules.default
-            inputs.disko.nixosModules.disko
-            ./machines/app.nix
-            # comin.nixosModules.comin
-            # (import ./modules/comin.nix)
-          ];
-        };
+        # app = nixpkgs-stable.lib.nixosSystem {
+        #   specialArgs = {
+        #     inherit inputs;
+        #   };
+        #   modules = [
+        #     inputs.home.nixosModules.default
+        #     inputs.disko.nixosModules.disko
+        #     ./machines/app.nix
+        #     # comin.nixosModules.comin
+        #     # (import ./modules/comin.nix)
+        #   ];
+        # };
 
         k3s-server = nixpkgs-stable.lib.nixosSystem {
           specialArgs = {
