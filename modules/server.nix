@@ -270,10 +270,6 @@
     pkgs.gitMinimal
     pkgs.just
 
-    pkgs.nh
-    pkgs.nvd
-    pkgs.nix-output-monitor
-
     # inputs.release-go.packages.${pkgs.system}.default
     # (import ../scripts/foo.nix { inherit pkgs; })
 

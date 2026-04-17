@@ -87,7 +87,7 @@
           modules = [
             inputs.home.nixosModules.default
             inputs.disko.nixosModules.disko
-            ./machines/app.nix
+            ./machines/k3s-server.nix
             # comin.nixosModules.comin
             # (import ./modules/comin.nix)
           ];
