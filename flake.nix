@@ -80,6 +80,19 @@
           ];
         };
 
+        k3s-server = nixpkgs-stable.lib.nixosSystem {
+          specialArgs = {
+            inherit inputs;
+          };
+          modules = [
+            inputs.home.nixosModules.default
+            inputs.disko.nixosModules.disko
+            ./machines/app.nix
+            # comin.nixosModules.comin
+            # (import ./modules/comin.nix)
+          ];
+        };
+
         # home-goe = nixpkgs-stable.lib.nixosSystem {
         #   specialArgs = {
         #     inherit inputs;
