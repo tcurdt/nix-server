@@ -126,7 +126,7 @@
 
   # caching
 
-  # you’ll first need to populate /etc/cachix-agent.token with the previously generated agent token with the contents:CACHIX_AGENT_TOKEN=XXX.
+  # populate /etc/cachix-agent.token with agent token with the contents:CACHIX_AGENT_TOKEN=XXX.
   # services.cachix-agent.enable = true;
   # agent name is inferred from the hostname
   # networking.hostName = "myhostname";
@@ -147,24 +147,6 @@
   # '';
   boot.loader.systemd-boot.configurationLimit = 3;
   boot.loader.grub.configurationLimit = 3;
-
-  # system.autoUpgrade = {
-  #   enable = true;
-  #   dates = "04:00";
-  #   # date = "hourly";
-  #   # date = "minutely";
-  #   # date = "*:0/5";
-  #   allowReboot = true;
-  #   flake = inputs.self.outPath;
-  #   flake = "github:YourUser/yourRepo";
-  #   flags = [
-  #     "--update-input"
-  #     "nixpkgs"
-  #     "--no-write-lock-file"
-  #     "-L" # print build logs
-  #   ];
-  #   randomizedDelaySec = "15min";
-  # };
 
   systemd = {
 
@@ -187,40 +169,6 @@
       hibernate.enable = false;
       hybrid-sleep.enable = false;
     };
-
-    # update system
-
-    # # https://github.com/Infinisil/nixbot/blob/feefc301bbe44742570bce0974005a2714a950e6/module.nix#L84-L113
-    # services.git-updater = {
-    #   description = "pull from git";
-    #   serviceConfig = {
-    #     Type = "oneshot";
-    #     User = "nixbot";
-    #     WorkingDirectory = "/var/lib/nixbot/nixpkgs/master";
-    #   };
-    #   path = [ pkgs.git ];
-    #   script = ''
-    #     git -C repo config gc.autoDetach false
-    #     if [ -d repo ]; then
-    #       git -C repo fetch
-    #       old=$(git -C repo rev-parse @)
-    #       new=$(git -C repo rev-parse @{u})
-    #       if [ $old != $new ]; then
-    #         git -C repo rebase --autostash
-    #         echo "Updated from $old to $new"
-    #       fi
-    #     else
-    #       git clone https://github.com/NixOS/nixpkgs repo
-    #       git -C repo remote add channels https://github.com/NixOS/nixpkgs-channels
-    #       echo "Initialized at $(git -C repo rev-parse @)"
-    #     fi
-    #   '';
-    # };
-    # timers.git-updater = {
-    #   wantedBy = [ "timers.target" ];
-    #   partOf = [ "git-updater.service" ];
-    #   timerConfig.OnUnitInactiveSec = 60;
-    # };
 
     # log files
 
@@ -274,55 +222,12 @@
     # (import ../scripts/foo.nix { inherit pkgs; })
 
     # pkgs.vulnix # vulnerability scanner
-    # pkgs.clamav # virus scanner
 
   ];
 
-  environment.sessionVariables = {
-    FLAKE = "/etc/nixos/flake";
-  };
-
-  # environment.variables = {
-  #   PATH = [
-  #     "\${HOME}/.bin"
-  #     "\$/usr/local/bin"
-  #   ];
+  # environment.sessionVariables = {
+  #   FLAKE = "/etc/nixos/flake";
   # };
-
-  # environment.persistence."/nix/persist" = {
-  #   directories = [
-  #     {
-  #       directory = "/secrets";
-  #       mode = "0755";
-  #     } # secrets
-  #     {
-  #       directory = "/var/lib/nixos";
-  #       mode = "0755";
-  #     } # system service persistent data
-  #     # { directory = "/etc/nixos";       mode="0755"; } # nixos system config files, can be considered optional
-  #     # { directory = "/srv";             mode="0755"; } # service data
-  #     # { directory = "/var/log";         mode="0755"; } # the place that journald dumps it logs to
-
-  #     # { directory = "/var/lib/influxdb2";  mode="0755"; }
-  #     # { directory = "/var/lib/postgresql"; mode="0755"; }
-  #     # { directory = "/var/lib/mysql";      mode="0755"; }
-
-  #   ];
-  # };
-  # environment.etc."ssh/ssh_host_rsa_key".source
-  #   = "/nix/persist/etc/ssh/ssh_host_rsa_key";
-  # environment.etc."ssh/ssh_host_rsa_key.pub".source
-  #   = "/nix/persist/etc/ssh/ssh_host_rsa_key.pub";
-  # environment.etc."ssh/ssh_host_ed25519_key".source
-  #   = "/nix/persist/etc/ssh/ssh_host_ed25519_key";
-  # environment.etc."ssh/ssh_host_ed25519_key.pub".source
-  #   = "/nix/persist/etc/ssh/ssh_host_ed25519_key.pub";
-
-  # security.auditd.enable = true;
-  # security.audit.enable = true;
-  # security.audit.rules = [
-  #   "-a exit,always -F arch=b64 -S execve"
-  # ];
 
   # services.fstrim.enable = true;
 
@@ -338,8 +243,8 @@
       # AllowUsers = [];
       PasswordAuthentication = false;
       KbdInteractiveAuthentication = false;
-      #PermitRootLogin = "without-password";
-      #X11Forwarding = false;
+      # PermitRootLogin = "without-password";
+      # X11Forwarding = false;
     };
     extraConfig = ''
       IgnoreRhosts yes
@@ -349,15 +254,5 @@
       AuthenticationMethods publickey
     '';
   };
-
-  # https://github.com/maralorn/nix-output-monitor
-  # system.activationScripts.diff = {
-  #   supportsDryActivation = true;
-  #   text = ''
-  #     if [[ -e /run/current-system ]]; then
-  #        ${pkgs.nix}/bin/nix store diff-closures /run/current-system "$systemConfig"
-  #     fi
-  #   '';
-  # };
 
 }

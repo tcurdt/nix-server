@@ -5,7 +5,7 @@
 }:
 {
 
-  networking.hostName = "k3s-server";
+  networking.hostName = "k3s-runner";
   networking.domain = "nixos";
   system.stateVersion = "25.11";
 
@@ -23,7 +23,7 @@
 
     # { users.users.root.password = "secret"; }
 
-    ../modules/k3s-server.nix
+    ../modules/k3s-runner.nix
   ];
 
   my.builders.allow = "remote";

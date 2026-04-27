@@ -5,7 +5,6 @@
 {
   imports = [
     # inputs.sops.nixosModules.sops
-    ./k3s-floating-ip.nix
     ./k3s-cleanup.nix
   ];
 
@@ -20,9 +19,9 @@
 
   services.k3s = {
     enable = true;
-    role = "server";
+    role = "agent";
     tokenFile = "/secrets/k3s_token";
-    # clusterInit = true;
+    serverAddr = "https://172.16.0.2:6443";
     extraFlags = toString [
       "--disable=traefik"
       # "--disable=metrics-server"
@@ -38,27 +37,8 @@
 
   # networking.nameservers = [ "10.43.0.10" ];
 
-  environment.shellAliases = {
-    k = "kubectl";
-    kall = "kubectl get all -A";
-  };
-
-  environment.variables = {
-    KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
-  };
-
   environment.systemPackages = [
     pkgs.k3s
-    pkgs.k9s
-    pkgs.stern
-    # pkgs.kubetail
-    # pkgs.kubernetes-helm
-    # pkgs.envsubst
-    # pkgs.kustomize
-    # pkgs.kubectx
-    # pkgs.regclient
-    # pkgs.kor # unstable
-    # pkgs.velero
   ];
 
 }
