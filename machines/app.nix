@@ -12,7 +12,7 @@
 
   imports = [
 
-    ../hardware/contabo.nix
+    ../hardware/hetzner-efi.nix
     ../modules/server.nix
 
     # ../modules/no-registry.nix
