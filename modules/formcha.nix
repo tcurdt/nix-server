@@ -2,13 +2,13 @@
   pkgs,
   lib,
   config,
-  formcha,
+  inputs,
   ...
 }:
 
 let
   cfg = config.services.my.formcha;
-  package = formcha.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  package = inputs.formcha.packages.${pkgs.stdenv.hostPlatform.system}.default;
   inheritOr = value: fallback: if value == null then fallback else value;
 
   normalizeInstance = name: instanceCfg: {
