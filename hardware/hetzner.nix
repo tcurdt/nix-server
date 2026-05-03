@@ -1,14 +1,12 @@
 {
-  # config,
   lib,
-  # pkgs,
   modulesPath,
   ...
 }:
 {
   imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
 
-  # boot.growPartition = true;
+  boot.loader.grub.enable = true;
   boot.loader.grub.device = "/dev/sda";
 
   boot.initrd.availableKernelModules = [
@@ -21,14 +19,57 @@
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
-  fileSystems."/" = {
-    device = "/dev/sda1";
-    fsType = "ext4";
+  disko.devices = {
+    disk.main = {
+      device = lib.mkDefault "/dev/sda";
+      type = "disk";
+      imageSize = "11G";
+      content = {
+        type = "gpt";
+        partitions = {
+          bios = {
+            size = "1M";
+            type = "EF02";
+          };
+          root = {
+            size = "10G";
+            content = {
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/";
+              mountOptions = [ "noatime" ];
+              extraArgs = [
+                "-L"
+                "nixos"
+              ];
+            };
+          };
+          varlib = {
+            size = "100%";
+            content = {
+              type = "zfs";
+              pool = "varlib";
+            };
+          };
+        };
+      };
+    };
+
+    zpool.varlib = {
+      type = "zpool";
+      rootFsOptions = {
+        atime = "off";
+        compression = "lz4";
+        xattr = "sa";
+        acltype = "posixacl";
+      };
+      datasets = {
+        data = {
+          type = "zfs_fs";
+          mountpoint = "/var/lib";
+          options.mountpoint = "legacy";
+        };
+      };
+    };
   };
-
-  # services.cloud-init = {
-  #   enabled = true;
-  #   network.enable = true;
-  # };
-
 }
