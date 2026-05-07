@@ -63,8 +63,10 @@
     # ignore bad ICMP errors
     "net.ipv4.icmp_ignore_bogus_error_responses" = 1;
     # reverse-path filter for spoof protection
-    "net.ipv4.conf.default.rp_filter" = 1;
-    "net.ipv4.conf.all.rp_filter" = 1;
+    # "net.ipv4.conf.default.rp_filter" = 1;
+    # "net.ipv4.conf.all.rp_filter" = 1;
+    "net.ipv4.conf.default.rp_filter" = 2;
+    "net.ipv4.conf.all.rp_filter" = 2;
     # SYN flood protection
     "net.ipv4.tcp_syncookies" = 1;
     # do not accept ICMP redirects (prevent MITM attacks)
@@ -87,14 +89,16 @@
     # requires >= 4.9 & kernel module
     "net.ipv4.tcp_congestion_control" = "bbr";
     # requires >= 4.19
-    "net.core.default_qdisc" = "cake";
-    #"net.core.default_qdisc" = "fq";
+    # "net.core.default_qdisc" = "cake";
+    "net.core.default_qdisc" = "fq";
     # note that inotify watches consume 1kB on 64-bit machines.
     # "fs.inotify.max_user_watches"   = 1048576;   # default:  8192
     # "fs.inotify.max_user_instances" =    1024;   # default:   128
     # "fs.inotify.max_queued_events"  =   32768;   # default: 16384
-    "net.core.rmem_max" = 2500000;
-    "net.core.wmem_max" = 2500000;
+    "net.core.rmem_max" = 67108864;
+    "net.core.wmem_max" = 67108864;
+    "net.ipv4.tcp_rmem" = "4096 87380 67108864";
+    "net.ipv4.tcp_wmem" = "4096 65536 67108864";
     # "net.core.somaxconn" = 4096;
     # "vm.overcommit_memory" = 1;
   };
@@ -243,8 +247,6 @@
       # AllowUsers = [];
       PasswordAuthentication = false;
       KbdInteractiveAuthentication = false;
-      # PermitRootLogin = "without-password";
-      # X11Forwarding = false;
     };
     extraConfig = ''
       IgnoreRhosts yes
