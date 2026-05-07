@@ -15,16 +15,18 @@
     ../hardware/hetzner-efi.nix
     ../modules/server.nix
 
-    # ../modules/no-registry.nix
-    # ../modules/builders.nix
-
-    ../modules/mmdb.nix
-
     ../users/root.nix
     ../users/ops.nix
     { ops.keyFiles = [ ../keys/tcurdt.pub ]; }
 
-    { users.users.root.password = "secret"; }
+    # { users.users.root.password = "secret"; }
+    {
+      # nix run nixpkgs#mkpasswd -- -m sha-512
+      # su - root
+      users.users.root.hashedPassword = "$6$/OBNw1chITrkLuVU$sZeOSyjQLGRdcm1DiOtKME8b9.odIJNlfXN8O/zQJL8uWYzUUYNmErApPc4eswfBDiFYHnrcpWuKpAFPZY99d1";
+    }
+
+    ../modules/mmdb.nix
 
     ../modules/nginx.nix
 
@@ -34,32 +36,51 @@
 
   ];
 
-  # my.builders.allow = "remote";
-
-  networking.hostId = "7ec474b0";
+  networking.hostId = "feedfeed";
 
   networking.firewall.allowedTCPPorts = [
     # 53 # dns
     80 # http
     443 # https
-    # 5432 # postgres
-    # 8081 # sqld http
-    # 5001 # sqld grpc
   ];
 
   services.my.mmdb = {
     enable = true;
-    # daysBetweenUpdates = 3;
+  };
+
+  services.pocket-id = {
+    enable = true;
+
+    settings = {
+      APP_URL = "https://id.vafer.org";
+      HOST = "127.0.0.1";
+      PORT = 1411;
+
+      TRUST_PROXY = true; # honor X-Forwarded-*
+      DB_CONNECTION_STRING = "data/pocket-id.db";
+
+      VERSION_CHECK_DISABLED = true;
+      ANALYTICS_DISABLED = true;
+
+      # ENCRYPTION_KEY = "";
+      ENCRYPTION_KEY_FILE = "/secrets/pocket-id.key";
+    };
+    # environmentFile = "/secrets/pocket-id.env";
   };
 
   services.my.nginx = {
-    virtualHosts."id.vafer.work" = {
+    virtualHosts."id.vafer.org" = {
       selfSigned = true;
       # locations."/" = {
-      #   proxyPass = config.services.my.authelia.url;
+      #   proxyPass = "http://127.0.0.1:1411";
+      #   extraConfig = ''
+      #     proxy_busy_buffers_size 512k;
+      #     proxy_buffers 4 512k;
+      #     proxy_buffer_size 256k;
+      #   '';
       # };
     };
-    # virtualHosts."formcha.vafer.work" = {
+    # virtualHosts."formcha.vafer.org" = {
     #   selfSigned = true;
     #   # authelia = config.services.my.authelia;
     #   locations."/" = {
@@ -98,7 +119,7 @@
       log_min_duration_statement = 500; # log slow queries
       log_statement = "ddl"; # log schema changes
       log_duration = false; # keep it in a single log line
-      log_line_prefix = "%t [%p] %u@%d "; # timestamp, pid, user, db
+      log_line_prefix = "%t [%u@%d] "; # timestamp, user, db
     };
   };
 
