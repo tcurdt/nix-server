@@ -57,7 +57,12 @@
       PORT = 1411;
 
       TRUST_PROXY = true; # honor X-Forwarded-*
-      DB_CONNECTION_STRING = "data/pocket-id.db";
+
+      # sqlite
+      DB_CONNECTION_STRING = "/var/lib/pocket-id/pocket-id.db";
+
+      # postgres
+      # DB_CONNECTION_STRING = "postgres://pocket-id@/pocket-id?host=/run/postgres/main";
 
       VERSION_CHECK_DISABLED = true;
       ANALYTICS_DISABLED = true;
