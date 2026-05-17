@@ -1,26 +1,26 @@
 {
   inputs = {
 
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.11";
-    # nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    # nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     home.url = "github:tcurdt/nix-home";
-    home.inputs.nixpkgs.follows = "nixpkgs-stable";
+    home.inputs.nixpkgs.follows = "nixpkgs";
 
     # comin.url = "github:nlewo/comin";
-    # comin.inputs.nixpkgs.follows = "nixpkgs-stable";
+    # comin.inputs.nixpkgs.follows = "nixpkgs";
 
     formcha.url = "github:tcurdt/formcha";
-    formcha.inputs.nixpkgs.follows = "nixpkgs-stable";
+    formcha.inputs.nixpkgs.follows = "nixpkgs";
 
     disko.url = "github:nix-community/disko";
-    disko.inputs.nixpkgs.follows = "nixpkgs-stable";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
 
   };
 
   outputs =
     {
-      nixpkgs-stable,
+      nixpkgs,
       # comin,
       formcha,
       disko,
@@ -30,7 +30,7 @@
 
       nixosConfigurations = {
 
-        # utm-arm = nixpkgs-stable.lib.nixosSystem {
+        # utm-arm = nixpkgs.lib.nixosSystem {
         #   specialArgs = {
         #     inherit inputs;
         #   };
@@ -40,7 +40,7 @@
         #   ];
         # };
 
-        # utm-x86 = nixpkgs-stable.lib.nixosSystem {
+        # utm-x86 = nixpkgs.lib.nixosSystem {
         #   specialArgs = {
         #     inherit inputs formcha;
         #   };
@@ -50,7 +50,7 @@
         #   ];
         # };
 
-        app = nixpkgs-stable.lib.nixosSystem {
+        app = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
           modules = [
@@ -60,7 +60,7 @@
           ];
         };
 
-        # k3s-server = nixpkgs-stable.lib.nixosSystem {
+        # k3s-server = nixpkgs.lib.nixosSystem {
         #   system = "x86_64-linux";
         #   specialArgs = { inherit inputs; };
         #   modules = [
@@ -90,7 +90,7 @@
         #   ];
         # };
 
-        # k3s-runner = nixpkgs-stable.lib.nixosSystem {
+        # k3s-runner = nixpkgs.lib.nixosSystem {
         #   system = "x86_64-linux";
         #   specialArgs = { inherit inputs; };
         #   modules = [
@@ -99,6 +99,26 @@
         #     ./machines/k3s-runner.nix
         #   ];
         # };
+
+        rke-server = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.home.nixosModules.default
+            ./machines/rke-server.nix
+          ];
+        };
+
+        rke-runner = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.home.nixosModules.default
+            ./machines/rke-runner.nix
+          ];
+        };
 
       };
     };
