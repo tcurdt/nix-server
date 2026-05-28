@@ -1,5 +1,7 @@
-{ pkgs, ... }:
-with pkgs;
+{
+  # pkgs,
+  ...
+}:
 {
   # oci-resolve = callPackage ./oci-resolve { };
   # gh-get = callPackage ./gh-get { };
