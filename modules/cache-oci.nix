@@ -13,7 +13,7 @@ in
 
     address = lib.mkOption {
       type = lib.types.str;
-      default = "10.0.0.1";
+      default = "10.0.0.2";
       description = "LAN-local address the OCI registry listens on.";
     };
 
