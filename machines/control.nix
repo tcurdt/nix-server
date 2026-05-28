@@ -35,7 +35,6 @@
     ../modules/cache-nix.nix
     ../modules/cache-oci.nix
     ../modules/db-postgres.nix
-    # ../modules/db-litesteam.nix
   ];
 
   services.my.mmdb = {
@@ -49,25 +48,6 @@
   services.my.oidc = {
     server = "id.vafer.org";
   };
-
-  # services.my.litestream.enable = true;
-  # services.my.litestream.instances.oidc = {
-  #   user = "pocket-id";
-  #   environmentFile = "/secrets/litestream-oidc.env";
-  #   settings = {
-  #     dbs = [
-  #       {
-  #         path = "/var/lib/pocket-id/pocket-id.db";
-  #         monitorInterval = "5s";
-  #         checkpointInterval = "5m";
-  #         replica = {
-  #           url = "s3://BUCKET/litestream/oidc.sqlite";
-  #           syncInterval = "5s";
-  #         };
-  #       }
-  #     ];
-  #   };
-  # };
 
   services.my.headscale = {
     server = "head.vafer.org";
@@ -103,14 +83,11 @@
 
   services.my.cache-nix = {
     enable = true;
-    address = "127.0.0.1";
-    port = 8081;
+    server = "nix.vafer.org";
   };
 
   services.my.cache-oci = {
     enable = true;
-    address = "127.0.0.1";
-    port = 8082;
   };
 
   services.my.postgres = {

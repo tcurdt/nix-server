@@ -3,11 +3,11 @@
   ...
 }:
 {
-  imports = [
-    # inputs.sops.nixosModules.sops
-    ./k3s-floating-ip.nix
-    ./k3s-cleanup.nix
-  ];
+  # imports = [
+  #   # inputs.sops.nixosModules.sops
+  #   # ./k3s-floating-ip.nix
+  #   # ./k3s-cleanup.nix
+  # ];
 
   networking.firewall.allowedTCPPorts = [
     6443 # required so that pods can reach the API server
@@ -57,7 +57,7 @@
     # pkgs.kustomize
     # pkgs.kubectx
     # pkgs.regclient
-    # pkgs.kor # unstable
+    # pkgs.kor
     # pkgs.velero
   ];
 

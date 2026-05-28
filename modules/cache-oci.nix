@@ -31,7 +31,7 @@ in
 
     openFirewall = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = "Whether to open the registry port in the firewall.";
     };
 
@@ -43,7 +43,7 @@ in
 
     enableGarbageCollect = lib.mkOption {
       type = lib.types.bool;
-      default = false;
+      default = true;
       description = "Whether to periodically run registry garbage collection.";
     };
 

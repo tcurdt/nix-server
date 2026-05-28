@@ -6,7 +6,13 @@
 
 let
   cfg = config.services.my.headscale;
-  oidcIssuer = if cfg.oidc.issuer == "" then "" else "https://${cfg.oidc.issuer}";
+  oidcIssuer =
+    if cfg.oidc.issuer == "" then
+      ""
+    else if lib.hasPrefix "http://" cfg.oidc.issuer || lib.hasPrefix "https://" cfg.oidc.issuer then
+      cfg.oidc.issuer
+    else
+      "https://${cfg.oidc.issuer}";
 in
 {
   options.services.my.headscale = {
@@ -22,6 +28,13 @@ in
       default = "";
       example = "tail.example.org";
       description = "MagicDNS base domain.";
+    };
+
+    nameservers = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "1.1.1.1" ];
+      description = "Global DNS nameservers passed to Tailscale clients. Empty disables overriding local DNS.";
     };
 
     address = lib.mkOption {
@@ -95,6 +108,8 @@ in
         dns = {
           base_domain = cfg.dns;
           magic_dns = true;
+          override_local_dns = cfg.nameservers != [ ];
+          nameservers.global = cfg.nameservers;
         };
         log.level = "info";
       }

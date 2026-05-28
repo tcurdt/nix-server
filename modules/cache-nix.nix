@@ -10,10 +10,6 @@ let
   listen = "${cfg.address}:${toString cfg.port}";
 in
 {
-  imports = [
-    ./nginx.nix
-  ];
-
   options.services.my.cache-nix = {
     enable = lib.mkEnableOption "Attic Nix binary cache";
 

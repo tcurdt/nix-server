@@ -32,10 +32,11 @@
 
   zramSwap.enable = false;
   boot.tmp.cleanOnBoot = true;
+  boot.zfs.forceImportRoot = false;
 
   # kernel
 
-  boot.kernelPackages = pkgs.linuxPackages_hardened;
+  # boot.kernelPackages = pkgs.linuxPackages_hardened; # linuxPackages_hardened has been removed due to lack of maintenance
   boot.kernelModules = [ "tcp_bbr" ];
 
   # boot.initrd.systemd.suppressedUnits = lib.mkIf config.systemd.enableEmergencyMode [

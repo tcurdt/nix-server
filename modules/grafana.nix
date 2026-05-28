@@ -7,7 +7,13 @@
 let
   cfg = config.services.my.grafana;
   listen = "${cfg.address}:${toString cfg.port}";
-  oidcIssuer = if cfg.oidc.issuer == "" then "" else "https://${cfg.oidc.issuer}";
+  oidcIssuer =
+    if cfg.oidc.issuer == "" then
+      ""
+    else if lib.hasPrefix "http://" cfg.oidc.issuer || lib.hasPrefix "https://" cfg.oidc.issuer then
+      cfg.oidc.issuer
+    else
+      "https://${cfg.oidc.issuer}";
 in
 {
   imports = [
@@ -34,6 +40,12 @@ in
       type = lib.types.port;
       default = 3001;
       description = "Port Grafana listens on.";
+    };
+
+    secretKeyPath = lib.mkOption {
+      type = lib.types.str;
+      default = "/secrets/grafana-secret-key";
+      description = "File containing Grafana's secret_key.";
     };
 
     oidc = {
@@ -115,6 +127,7 @@ in
               admin_user = "admin";
               admin_email = "admin@localhost";
               admin_password = "admin";
+              secret_key = "$__file{${cfg.secretKeyPath}}";
             };
           }
           (
