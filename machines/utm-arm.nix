@@ -6,7 +6,7 @@
 
   networking.hostName = "utm-arm";
   networking.domain = "utm";
-  system.stateVersion = "25.11";
+  system.stateVersion = "26.05";
 
   imports = [
 

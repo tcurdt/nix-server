@@ -6,7 +6,7 @@
 
   networking.hostName = "home-ber";
   networking.domain = "home";
-  system.stateVersion = "25.11";
+  system.stateVersion = "26.05";
 
   imports = [
 
