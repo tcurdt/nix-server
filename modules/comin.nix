@@ -5,9 +5,6 @@
 {
   services.comin = {
     enable = true;
-    # environment = {
-    #   GIT_SSH_COMMAND = "${pkgs.openssh}/bin/ssh -i <path to key>";
-    # };
     # postDeploymentCommand =
     remotes = [
       {
@@ -22,5 +19,4 @@
     ];
     # machineId = "22823ba6c96947e78b006c51a56fd89c";
   };
-
 }

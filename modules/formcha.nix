@@ -15,6 +15,7 @@ let
     enable = inheritOr instanceCfg.enable cfg.enable;
     envFile = inheritOr instanceCfg.envFile cfg.envFile;
     user = inheritOr instanceCfg.user cfg.user;
+    server = inheritOr instanceCfg.server cfg.server;
     url = "http://unix:${mkSocketPath name}:";
   };
 
@@ -60,6 +61,10 @@ let
   };
 in
 {
+  imports = [
+    ./nginx.nix
+  ];
+
   options.services.my.formcha = lib.mkOption {
     default = { };
     description = "formcha service defaults and instances.";
@@ -79,6 +84,13 @@ in
             type = lib.types.str;
             default = "formcha";
             description = "Default system user/group for formcha instances.";
+          };
+
+          server = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            example = "formcha.example.org";
+            description = "Default public server name for formcha instances. Null disables nginx registration.";
           };
 
           url = lib.mkOption {
@@ -113,6 +125,13 @@ in
                       type = lib.types.nullOr lib.types.str;
                       default = null;
                       description = "System user/group for this instance. Null inherits services.my.formcha.user.";
+                    };
+
+                    server = lib.mkOption {
+                      type = lib.types.nullOr lib.types.str;
+                      default = null;
+                      example = "formcha.example.org";
+                      description = "Public server name for this instance. Null inherits services.my.formcha.server.";
                     };
 
                     url = lib.mkOption {
@@ -157,5 +176,21 @@ in
     systemd.services = lib.mapAttrs' (
       instance: instanceCfg: lib.nameValuePair "formcha-${instance}" (mkService instance instanceCfg)
     ) enabledInstances;
+
+    services.my.nginx =
+      lib.mkIf (lib.any (instanceCfg: instanceCfg.server != null) (builtins.attrValues enabledInstances))
+        {
+          enable = true;
+          virtualHosts = lib.listToAttrs (
+            lib.mapAttrsToList (
+              _instance: instanceCfg:
+              lib.nameValuePair instanceCfg.server {
+                locations."/" = {
+                  proxyPass = instanceCfg.url;
+                };
+              }
+            ) (lib.filterAttrs (_: instanceCfg: instanceCfg.server != null) enabledInstances)
+          );
+        };
   };
 }

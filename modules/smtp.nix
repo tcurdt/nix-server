@@ -4,8 +4,6 @@
 }:
 {
 
-  # smtp
-
   programs.msmtp = {
     enable = true;
     setSendmail = false;

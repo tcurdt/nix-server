@@ -6,7 +6,7 @@
 }:
 {
 
-  networking.hostName = "app";
+  networking.hostName = "control";
   system.stateVersion = "25.11";
 
   imports = [
@@ -18,30 +18,28 @@
     ../users/ops.nix
     { ops.keyFiles = [ ../keys/tcurdt.pub ]; }
 
-    # { users.users.root.password = "secret"; }
     {
-      # nix run nixpkgs#mkpasswd -- -m sha-512
-      # su - root
+      # create: nix run nixpkgs#mkpasswd -- -m sha-512
+      # verify: su - root
       users.users.root.hashedPassword = "$6$/OBNw1chITrkLuVU$sZeOSyjQLGRdcm1DiOtKME8b9.odIJNlfXN8O/zQJL8uWYzUUYNmErApPc4eswfBDiFYHnrcpWuKpAFPZY99d1";
     }
 
     ../modules/tailscale.nix
     ../modules/mmdb.nix
     ../modules/nginx.nix
-    ../modules/ntfy.nix
     ../modules/oidc.nix
-    ../modules/formcha.nix
+    ../modules/headscale.nix
+    ../modules/forgejo.nix
+    ../modules/ntfy.nix
+    ../modules/grafana.nix
+    ../modules/cache-nix.nix
+    ../modules/cache-oci.nix
     ../modules/db-postgres.nix
-
+    # ../modules/db-litesteam.nix
   ];
 
   services.my.mmdb = {
     enable = true;
-  };
-
-  services.my.tailscale = {
-    enable = true;
-    server = "head.vafer.org";
   };
 
   services.my.nginx = {
@@ -52,15 +50,67 @@
     server = "id.vafer.org";
   };
 
+  # services.my.litestream.enable = true;
+  # services.my.litestream.instances.oidc = {
+  #   user = "pocket-id";
+  #   environmentFile = "/secrets/litestream-oidc.env";
+  #   settings = {
+  #     dbs = [
+  #       {
+  #         path = "/var/lib/pocket-id/pocket-id.db";
+  #         monitorInterval = "5s";
+  #         checkpointInterval = "5m";
+  #         replica = {
+  #           url = "s3://BUCKET/litestream/oidc.sqlite";
+  #           syncInterval = "5s";
+  #         };
+  #       }
+  #     ];
+  #   };
+  # };
+
+  services.my.headscale = {
+    server = "head.vafer.org";
+    dns = "tail.vafer.org";
+    oidc = {
+      issuer = "id.vafer.org";
+    };
+  };
+
+  services.my.tailscale = {
+    enable = true;
+    server = "head.vafer.org";
+  };
+
+  services.my.forgejo = {
+    server = "git.vafer.org";
+    oidc = {
+      issuer = "id.vafer.org";
+    };
+  };
+
   services.my.ntfy = {
     enable = true;
     server = "ntfy.vafer.org";
   };
 
-  services.my.formcha = {
+  services.my.grafana = {
     enable = true;
-    server = "formcha.vafer.org";
-    envFile = "/secrets/formcha.env";
+    oidc = {
+      issuer = "id.vafer.org";
+    };
+  };
+
+  services.my.cache-nix = {
+    enable = true;
+    address = "127.0.0.1";
+    port = 8081;
+  };
+
+  services.my.cache-oci = {
+    enable = true;
+    address = "127.0.0.1";
+    port = 8082;
   };
 
   services.my.postgres = {

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   imports = [
   ];
@@ -106,6 +106,9 @@
   # networking
 
   # networking.enableIPv6 = false;
+
+  networking.domain = lib.mkDefault "nixos";
+  networking.hostId = lib.mkDefault "feedfeed";
 
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];

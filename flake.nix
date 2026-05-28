@@ -50,6 +50,26 @@
         #   ];
         # };
 
+        home-ber = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.home.nixosModules.default
+            ./machines/home-ber.nix
+          ];
+        };
+
+        home-goe = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.home.nixosModules.default
+            ./machines/home-goe.nix
+          ];
+        };
+
         app = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
@@ -57,6 +77,26 @@
             inputs.disko.nixosModules.disko
             inputs.home.nixosModules.default
             ./machines/app.nix
+          ];
+        };
+
+        control = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.home.nixosModules.default
+            ./machines/control.nix
+          ];
+        };
+
+        michael = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.home.nixosModules.default
+            ./machines/michael.nix
           ];
         };
 
@@ -99,26 +139,6 @@
         #     ./machines/k3s-runner.nix
         #   ];
         # };
-
-        rke-server = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.disko.nixosModules.disko
-            inputs.home.nixosModules.default
-            ./machines/rke-server.nix
-          ];
-        };
-
-        rke-runner = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.disko.nixosModules.disko
-            inputs.home.nixosModules.default
-            ./machines/rke-runner.nix
-          ];
-        };
 
       };
     };
