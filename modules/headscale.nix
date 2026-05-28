@@ -63,6 +63,7 @@ in
         description = "OIDC client ID used by Headscale.";
       };
 
+      # sudo sh -c 'openssl rand -hex 32 | tr -d "\n" > /secrets/headscale-oidc-client-secret'
       clientSecretPath = lib.mkOption {
         type = lib.types.str;
         default = "/secrets/headscale-oidc-client-secret";

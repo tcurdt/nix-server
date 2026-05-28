@@ -28,6 +28,7 @@ in
       description = "Port Pocket ID listens on.";
     };
 
+    # sudo sh -c 'openssl rand -hex 32 | tr -d "\n" > /secrets/pocket-id.key'
     encryptionKeyFile = lib.mkOption {
       type = lib.types.str;
       default = "/secrets/pocket-id.key";

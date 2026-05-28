@@ -42,6 +42,7 @@ in
       description = "Port Grafana listens on.";
     };
 
+    # sudo sh -c 'openssl rand -hex 32 | tr -d "\n" > /secrets/grafana-secret-key'
     secretKeyPath = lib.mkOption {
       type = lib.types.str;
       default = "/secrets/grafana-secret-key";
@@ -62,6 +63,7 @@ in
         description = "OIDC client ID used by Grafana.";
       };
 
+      # sudo sh -c 'openssl rand -hex 32 | tr -d "\n" > /secrets/grafana-oidc-client-secret'
       clientSecretPath = lib.mkOption {
         type = lib.types.str;
         default = "/secrets/grafana-oidc-client-secret";

@@ -32,6 +32,7 @@ in
       description = "Port atticd listens on.";
     };
 
+    # sudo sh -c 'echo "ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=$(openssl genrsa -traditional 4096 | base64 -w0)" > /secrets/atticd.env'
     environmentFile = lib.mkOption {
       type = lib.types.path;
       default = "/secrets/atticd.env";
