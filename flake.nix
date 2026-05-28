@@ -90,15 +90,15 @@
           ];
         };
 
-        michael = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.disko.nixosModules.disko
-            inputs.home.nixosModules.default
-            ./machines/michael.nix
-          ];
-        };
+        # michael = nixpkgs.lib.nixosSystem {
+        #   system = "x86_64-linux";
+        #   specialArgs = { inherit inputs; };
+        #   modules = [
+        #     inputs.disko.nixosModules.disko
+        #     inputs.home.nixosModules.default
+        #     ./machines/michael.nix
+        #   ];
+        # };
 
         # k3s-server = nixpkgs.lib.nixosSystem {
         #   system = "x86_64-linux";
