@@ -80,46 +80,46 @@
         #   ];
         # };
 
-        # control = nixpkgs.lib.nixosSystem {
-        #   system = "x86_64-linux";
-        #   specialArgs = { inherit inputs; };
-        #   modules = [
-        #     inputs.disko.nixosModules.disko
-        #     inputs.home.nixosModules.default
-        #     ./machines/control.nix
-        #   ];
-        # };
-
-        # michael = nixpkgs.lib.nixosSystem {
-        #   system = "x86_64-linux";
-        #   specialArgs = { inherit inputs; };
-        #   modules = [
-        #     inputs.disko.nixosModules.disko
-        #     inputs.home.nixosModules.default
-        #     ./machines/michael.nix
-        #   ];
-        # };
-
-        k3s-server = nixpkgs.lib.nixosSystem {
+        control = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
           modules = [
             inputs.disko.nixosModules.disko
             inputs.home.nixosModules.default
-            ./machines/k3s-server.nix
-            # { networking.hostName = "blue-c-1"; }
+            ./machines/control.nix
           ];
         };
 
-        k3s-runner = nixpkgs.lib.nixosSystem {
+        michael = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = { inherit inputs; };
           modules = [
             inputs.disko.nixosModules.disko
             inputs.home.nixosModules.default
-            ./machines/k3s-runner.nix
+            ./machines/michael.nix
           ];
         };
+
+        # k3s-server = nixpkgs.lib.nixosSystem {
+        #   system = "x86_64-linux";
+        #   specialArgs = { inherit inputs; };
+        #   modules = [
+        #     inputs.disko.nixosModules.disko
+        #     inputs.home.nixosModules.default
+        #     ./machines/k3s-server.nix
+        #     # { networking.hostName = "blue-c-1"; }
+        #   ];
+        # };
+
+        # k3s-runner = nixpkgs.lib.nixosSystem {
+        #   system = "x86_64-linux";
+        #   specialArgs = { inherit inputs; };
+        #   modules = [
+        #     inputs.disko.nixosModules.disko
+        #     inputs.home.nixosModules.default
+        #     ./machines/k3s-runner.nix
+        #   ];
+        # };
 
       };
     };
