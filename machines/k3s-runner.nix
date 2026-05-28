@@ -27,4 +27,8 @@
     enable = true;
   };
 
+  services.my.k3s-runner = {
+    enable = true;
+  };
+
 }

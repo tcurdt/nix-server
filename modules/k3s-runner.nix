@@ -1,44 +1,60 @@
 {
+  config,
+  lib,
   pkgs,
   ...
 }:
+
+let
+  cfg = config.services.my.k3s-runner;
+
+  baseFlags = [
+    "--disable=traefik"
+    "--write-kubeconfig-mode=00640"
+    "--write-kubeconfig-group=wheel"
+  ];
+in
 {
-  imports = [
-    # inputs.sops.nixosModules.sops
-    ./k3s-cleanup.nix
-  ];
+  options.services.my.k3s-runner = {
+    enable = lib.mkEnableOption "k3s runner";
 
-  networking.firewall.allowedTCPPorts = [
-    6443 # required so that pods can reach the API server
-    # 2379 # etcd clients: required if using a "High Availability Embedded etcd"
-    # 2380 # etcd peers: required if using a "High Availability Embedded etcd"
-  ];
-  networking.firewall.allowedUDPPorts = [
-    8472 # flannel: required if using multi-node for inter-node networking
-  ];
+    tokenFile = lib.mkOption {
+      type = lib.types.path;
+      default = "/secrets/k3s_token";
+      description = "File containing the k3s cluster token.";
+    };
 
-  services.k3s = {
-    enable = true;
-    role = "agent";
-    tokenFile = "/secrets/k3s_token";
-    serverAddr = "https://172.16.0.2:6443";
-    extraFlags = toString [
-      "--disable=traefik"
-      # "--disable=metrics-server"
-      # "--disable=servicelb"
-      # "--disable-cloud-controller"
-      # "--disable-kube-proxy"
-      # "--disable-network-policy"
-      # "--disable-helm-controller"
-      "--write-kubeconfig-mode 00640"
-      "--write-kubeconfig-group wheel"
-    ];
+    serverAddr = lib.mkOption {
+      type = lib.types.str;
+      default = "https://172.16.0.2:6443";
+      description = "k3s server API URL this agent joins.";
+    };
+
+    extraFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional flags passed to k3s agent.";
+    };
   };
 
-  # networking.nameservers = [ "10.43.0.10" ];
+  config = lib.mkIf cfg.enable {
+    networking.firewall.allowedTCPPorts = [
+      6443 # required so that pods can reach the API server
+    ];
+    networking.firewall.allowedUDPPorts = [
+      8472 # flannel: required if using multi-node for inter-node networking
+    ];
 
-  environment.systemPackages = [
-    pkgs.k3s
-  ];
+    services.k3s = {
+      enable = true;
+      role = "agent";
+      tokenFile = cfg.tokenFile;
+      serverAddr = cfg.serverAddr;
+      extraFlags = lib.concatStringsSep " " (baseFlags ++ cfg.extraFlags);
+    };
 
+    environment.systemPackages = [
+      pkgs.k3s
+    ];
+  };
 }

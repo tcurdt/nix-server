@@ -27,4 +27,15 @@
     enable = true;
   };
 
+  services.my.k3s-server = {
+    enable = true;
+    # floating-ip = {
+    #   enable = true;
+    #   ipv4 = "116.202.2.78";
+    #   ipv6 = "2a01:4f8:1c17:800f::1";
+    #   ipv6Gateway = "fe80::1";
+    #   interface = "enp1s0";
+    # };
+  };
+
 }
