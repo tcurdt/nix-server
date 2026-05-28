@@ -50,6 +50,7 @@
     phpPackage = pkgs.php84;
   };
 
+  # mariadb --socket=/run/mariadb/cc/mysqld.sock -u root
   services.my.mariadb.instances.cc = {
     enable = true;
     package = pkgs.mariadb_118;
@@ -59,6 +60,7 @@
     };
   };
 
+  # mariadb --socket=/run/mariadb/pc/mysqld.sock -u root
   services.my.mariadb.instances.pc = {
     enable = true;
     package = pkgs.mariadb_118;
@@ -69,7 +71,7 @@
   };
 
   environment.systemPackages = [
-    pkgs.mariadb_118 # mysql
+    pkgs.mariadb_118
   ];
 
 }
