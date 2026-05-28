@@ -73,15 +73,17 @@ let
 
   mkEnsureDatabasesScript =
     instance: instanceCfg:
+    let
+      mkCreateDatabaseSql = database: ''
+        CREATE DATABASE IF NOT EXISTS `${lib.replaceStrings [ "`" ] [ "``" ] database}`;
+      '';
+      createDatabasesSql = lib.concatMapStringsSep " " mkCreateDatabaseSql instanceCfg.databases;
+    in
     pkgs.writeShellScript "mariadb-${instance}-ensure-databases" ''
       set -euo pipefail
       ${instanceCfg.package}/bin/mysqladmin ${mkClientArgs instanceCfg} --user=${lib.escapeShellArg instanceCfg.user} ping >/dev/null
       ${lib.optionalString (instanceCfg.databases != [ ]) ''
-        ${
-          lib.concatMapStringsSep "\n" (database: ''
-            printf 'CREATE DATABASE IF NOT EXISTS `%s`;\n' ${lib.escapeShellArg database}
-          '') instanceCfg.databases
-        } | ${instanceCfg.package}/bin/mysql ${mkClientArgs instanceCfg} --user=${lib.escapeShellArg instanceCfg.user} --batch --skip-column-names
+        ${instanceCfg.package}/bin/mysql ${mkClientArgs instanceCfg} --user=${lib.escapeShellArg instanceCfg.user} --batch --skip-column-names --execute=${lib.escapeShellArg createDatabasesSql}
       ''}
     '';
 
