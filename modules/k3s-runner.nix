@@ -25,12 +25,6 @@ in
       description = "File containing the k3s cluster token.";
     };
 
-    waitForToken = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Whether to wait for tokenFile to appear before starting k3s.";
-    };
-
     serverAddr = lib.mkOption {
       type = lib.types.str;
       default = "https://172.16.0.2:6443";
@@ -61,23 +55,8 @@ in
     };
 
     systemd.services.k3s = {
-      unitConfig.ConditionPathExists = lib.mkIf cfg.waitForToken cfg.tokenFile;
+      unitConfig.ConditionPathExists = cfg.tokenFile;
     };
-
-    systemd.paths.k3s-token = lib.mkIf cfg.waitForToken {
-      description = "Start k3s when its token file appears";
-      wantedBy = [ "multi-user.target" ];
-
-      pathConfig = {
-        PathExists = cfg.tokenFile;
-        PathChanged = cfg.tokenFile;
-        Unit = "k3s.service";
-      };
-    };
-
-    systemd.tmpfiles.rules = lib.mkIf cfg.waitForToken [
-      "d ${builtins.dirOf cfg.tokenFile} 0700 root root -"
-    ];
 
     environment.systemPackages = [
       pkgs.k3s
