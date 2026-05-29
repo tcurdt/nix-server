@@ -9,9 +9,6 @@ let
   cfg = config.services.my.k3s-runner;
 
   baseFlags = [
-    "--disable=traefik"
-    "--write-kubeconfig-mode=00640"
-    "--write-kubeconfig-group=wheel"
   ];
 in
 {
