@@ -50,7 +50,7 @@ in
     # openssl rand -hex 32
     tokenFile = lib.mkOption {
       type = lib.types.path;
-      default = "/secrets/k3s_token";
+      default = "/secrets/cluster-token";
       description = "File containing the k3s cluster token.";
     };
 
