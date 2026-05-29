@@ -47,6 +47,7 @@ in
   options.services.my.k3s-server = {
     enable = lib.mkEnableOption "k3s server";
 
+    # openssl rand -hex 32
     tokenFile = lib.mkOption {
       type = lib.types.path;
       default = "/secrets/k3s_token";

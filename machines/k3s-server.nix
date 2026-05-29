@@ -16,7 +16,6 @@
     ../users/root.nix
     ../users/ops.nix
     { ops.keyFiles = [ ../keys/tcurdt.pub ]; }
-
     # { users.users.root.password = "secret"; }
 
     ../modules/mmdb.nix

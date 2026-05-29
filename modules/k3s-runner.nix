@@ -18,6 +18,7 @@ in
   options.services.my.k3s-runner = {
     enable = lib.mkEnableOption "k3s runner";
 
+    # openssl rand -hex 32
     tokenFile = lib.mkOption {
       type = lib.types.path;
       default = "/secrets/k3s_token";
