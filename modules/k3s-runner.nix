@@ -7,10 +7,9 @@
 
 let
   cfg = config.services.my.k3s-runner;
+  dynamicConfigFile = "/run/k3s-agent-dynamic.yaml";
 
-  baseFlags = [
-    # "--node-ip=172.16.0.3"
-  ];
+  baseFlags = [ ];
 in
 {
   options.services.my.k3s-runner = {
@@ -49,11 +48,23 @@ in
       role = "agent";
       tokenFile = cfg.tokenFile;
       serverAddr = cfg.serverAddr;
-      extraFlags = lib.concatStringsSep " " (baseFlags ++ cfg.extraFlags);
+      extraFlags = lib.concatStringsSep " " (
+        [ "--config=${dynamicConfigFile}" ] ++ baseFlags ++ cfg.extraFlags
+      );
     };
 
     systemd.services.k3s = {
       unitConfig.ConditionPathExists = cfg.tokenFile;
+      preStart = ''
+        node_ip="$(${pkgs.iproute2}/bin/ip -4 -o addr show scope global | ${pkgs.gawk}/bin/awk '{ split($4, a, "/"); if (a[1] ~ /^172[.]16[.]0[.]/) { print a[1]; exit } }')"
+
+        if [ -z "$node_ip" ]; then
+          echo "could not find private 172.16.0.x node IP" >&2
+          exit 1
+        fi
+
+        printf 'node-ip: "%s"\n' "$node_ip" > ${dynamicConfigFile}
+      '';
     };
 
     environment.systemPackages = [
