@@ -7,7 +7,7 @@
 
 let
   cfg = config.services.my.k3s-server;
-  dynamicConfigFile = "/run/k3s-server-dynamic.yaml";
+  dynamicConfigFile = "/run/k3s/config.yaml";
 
   baseFlags = [
     "--disable=traefik"

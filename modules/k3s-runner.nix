@@ -7,7 +7,7 @@
 
 let
   cfg = config.services.my.k3s-runner;
-  dynamicConfigFile = "/run/k3s-agent-dynamic.yaml";
+  dynamicConfigFile = "/run/k3s/config.yaml";
 
   baseFlags = [ ];
 in
