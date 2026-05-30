@@ -9,6 +9,7 @@ let
   cfg = config.services.my.k3s-runner;
 
   baseFlags = [
+    # "--node-ip=172.16.0.3"
   ];
 in
 {

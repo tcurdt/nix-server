@@ -9,6 +9,7 @@ let
   cfg = config.services.my.k3s-server;
 
   baseFlags = [
+    "--node-ip=172.16.0.2"
     "--disable=traefik"
     "--write-kubeconfig-mode=00640"
     "--write-kubeconfig-group=wheel"
