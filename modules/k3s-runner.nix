@@ -57,14 +57,16 @@ in
     systemd.services.k3s = {
       unitConfig.ConditionPathExists = cfg.tokenFile;
       preStart = ''
-        node_ip="$(${pkgs.iproute2}/bin/ip -4 -o addr show scope global | ${pkgs.gawk}/bin/awk '{ split($4, a, "/"); if (a[1] ~ /^172[.]16[.]0[.]/) { print a[1]; exit } }')"
+        node_info="$(${pkgs.iproute2}/bin/ip -4 -o addr show scope global | ${pkgs.gawk}/bin/awk '{ split($4, a, "/"); if (a[1] ~ /^172[.]16[.]0[.]/) { print $2, a[1]; exit } }')"
+        node_interface="''${node_info%% *}"
+        node_ip="''${node_info##* }"
 
-        if [ -z "$node_ip" ]; then
-          echo "could not find private 172.16.0.x node IP" >&2
+        if [ -z "$node_info" ]; then
+          echo "could not find private 172.16.0.x node IP and interface" >&2
           exit 1
         fi
 
-        printf 'node-ip: "%s"\n' "$node_ip" > ${dynamicConfigFile}
+        printf 'node-ip: "%s"\nflannel-iface: "%s"\n' "$node_ip" "$node_interface" > ${dynamicConfigFile}
       '';
     };
 

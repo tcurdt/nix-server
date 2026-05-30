@@ -7,9 +7,9 @@
 
 let
   cfg = config.services.my.k3s-server;
+  dynamicConfigFile = "/run/k3s-server-dynamic.yaml";
 
   baseFlags = [
-    "--node-ip=172.16.0.2"
     "--disable=traefik"
     "--write-kubeconfig-mode=00640"
     "--write-kubeconfig-group=wheel"
@@ -116,11 +116,26 @@ in
       role = "server";
       tokenFile = cfg.tokenFile;
       clusterInit = cfg.clusterInit;
-      extraFlags = lib.concatStringsSep " " (baseFlags ++ cfg.extraFlags);
+      extraFlags = lib.concatStringsSep " " (
+        [ "--config=${dynamicConfigFile}" ] ++ baseFlags ++ cfg.extraFlags
+      );
     };
 
     systemd.services.k3s = {
       unitConfig.ConditionPathExists = cfg.tokenFile;
+
+      preStart = ''
+        node_info="$(${pkgs.iproute2}/bin/ip -4 -o addr show scope global | ${pkgs.gawk}/bin/awk '{ split($4, a, "/"); if (a[1] ~ /^172[.]16[.]0[.]/) { print $2, a[1]; exit } }')"
+        node_interface="''${node_info%% *}"
+        node_ip="''${node_info##* }"
+
+        if [ -z "$node_info" ]; then
+          echo "could not find private 172.16.0.x node IP and interface" >&2
+          exit 1
+        fi
+
+        printf 'node-ip: "%s"\nflannel-iface: "%s"\n' "$node_ip" "$node_interface" > ${dynamicConfigFile}
+      '';
 
       serviceConfig = lib.mkIf floatingIp.enable {
         ExecStartPost = floatingIpStartCommands;
