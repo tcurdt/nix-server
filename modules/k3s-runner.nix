@@ -38,6 +38,7 @@ in
   config = lib.mkIf cfg.enable {
     networking.firewall.allowedTCPPorts = [
       6443 # required so that pods can reach the API server
+      10250 # kubelet metrics endpoint for metrics-server
     ];
     networking.firewall.allowedUDPPorts = [
       8472 # flannel: required if using multi-node for inter-node networking
