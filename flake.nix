@@ -70,15 +70,15 @@
         #   ];
         # };
 
-        # app = nixpkgs.lib.nixosSystem {
-        #   system = "x86_64-linux";
-        #   specialArgs = { inherit inputs; };
-        #   modules = [
-        #     inputs.disko.nixosModules.disko
-        #     inputs.home.nixosModules.default
-        #     ./machines/app.nix
-        #   ];
-        # };
+        app = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.home.nixosModules.default
+            ./machines/app.nix
+          ];
+        };
 
         control = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";

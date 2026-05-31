@@ -24,11 +24,11 @@
       users.users.root.hashedPassword = "$6$/OBNw1chITrkLuVU$sZeOSyjQLGRdcm1DiOtKME8b9.odIJNlfXN8O/zQJL8uWYzUUYNmErApPc4eswfBDiFYHnrcpWuKpAFPZY99d1";
     }
 
-    ../modules/tailscale.nix
     ../modules/mmdb.nix
     ../modules/nginx.nix
-    ../modules/oidc.nix
+    ../modules/tailscale.nix
     ../modules/headscale.nix
+    ../modules/oidc.nix
     ../modules/forgejo.nix
     ../modules/ntfy.nix
     ../modules/grafana.nix
@@ -45,21 +45,26 @@
     enable = true;
   };
 
-  services.my.oidc = {
-    server = "id.vafer.org";
+  services.my.tailscale = {
+    enable = true;
+    server = "head.vafer.org";
   };
 
   services.my.headscale = {
     server = "head.vafer.org";
-    dns = "tail.vafer.org";
+    domain = "tail.vafer.org";
     oidc = {
       issuer = "id.vafer.org";
     };
   };
 
-  services.my.tailscale = {
+  services.my.oidc = {
+    server = "id.vafer.org";
+  };
+
+  services.my.ntfy = {
     enable = true;
-    server = "head.vafer.org";
+    server = "ntfy.vafer.org";
   };
 
   services.my.forgejo = {
@@ -67,11 +72,6 @@
     oidc = {
       issuer = "id.vafer.org";
     };
-  };
-
-  services.my.ntfy = {
-    enable = true;
-    server = "ntfy.vafer.org";
   };
 
   services.my.grafana = {

@@ -4,6 +4,8 @@
   ...
 }:
 
+# https://docs.ntfy.sh/config/
+
 let
   cfg = config.services.my.ntfy;
   listen = "${cfg.address}:${toString cfg.port}";
@@ -31,6 +33,24 @@ in
       description = "Port ntfy listens on.";
     };
 
+    enableLogin = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable web UI login and account management (enable-login).";
+    };
+
+    requireLogin = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Deny all unauthenticated access to topics (auth-default-access: deny-all).";
+    };
+
+    upstreamBaseUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = "https://ntfy.sh";
+      description = "Upstream ntfy.sh URL for iOS push notification forwarding. Null disables forwarding.";
+    };
+
     settings = lib.mkOption {
       type = lib.types.attrsOf lib.types.anything;
       default = { };
@@ -50,7 +70,11 @@ in
       enable = true;
       settings = {
         listen-http = listen;
-        base-url = if cfg.url != null then cfg.url else "http://${listen}";
+        base-url = if cfg.server != null then "https://${cfg.server}" else "http://${listen}";
+        behind-proxy = cfg.server != null;
+        enable-login = cfg.enableLogin;
+        auth-default-access = lib.mkIf cfg.requireLogin "deny-all";
+        upstream-base-url = lib.mkIf (cfg.upstreamBaseUrl != null) cfg.upstreamBaseUrl;
       }
       // cfg.settings;
     };

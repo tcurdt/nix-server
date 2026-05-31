@@ -14,7 +14,7 @@ in
 
     authKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
-      default = "/run/secrets/tailscale_key";
+      default = "/secrets/tailscale.key";
       description = "File containing the Tailscale auth key. Null disables automatic login.";
     };
 

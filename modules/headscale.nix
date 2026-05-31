@@ -23,7 +23,7 @@ in
       description = "Public Headscale server name. Empty disables the service.";
     };
 
-    dns = lib.mkOption {
+    domain = lib.mkOption {
       type = lib.types.str;
       default = "";
       example = "tail.example.org";
@@ -94,7 +94,7 @@ in
   config = lib.mkIf (cfg.server != "") {
     assertions = [
       {
-        assertion = cfg.dns != "";
+        assertion = cfg.domain != "";
         message = "services.my.headscale.dns must be set when services.my.headscale.server is set.";
       }
     ];
@@ -107,7 +107,7 @@ in
       settings = {
         server_url = cfg.url;
         dns = {
-          base_domain = cfg.dns;
+          base_domain = cfg.domain;
           magic_dns = true;
           override_local_dns = cfg.nameservers != [ ];
           nameservers.global = cfg.nameservers;
