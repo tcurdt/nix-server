@@ -56,6 +56,7 @@ in
 
     systemd.services.k3s = {
       unitConfig.ConditionPathExists = cfg.tokenFile;
+      serviceConfig.RuntimeDirectory = "k3s";
       preStart = ''
         node_info="$(${pkgs.iproute2}/bin/ip -4 -o addr show scope global | ${pkgs.gawk}/bin/awk '{ split($4, a, "/"); if (a[1] ~ /^172[.]16[.]0[.]/) { print $2, a[1]; exit } }')"
         node_interface="''${node_info%% *}"

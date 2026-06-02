@@ -137,10 +137,13 @@ in
         printf 'node-ip: "%s"\nflannel-iface: "%s"\n' "$node_ip" "$node_interface" > ${dynamicConfigFile}
       '';
 
-      serviceConfig = lib.mkIf floatingIp.enable {
-        ExecStartPost = floatingIpStartCommands;
-        ExecStop = floatingIpStopCommands;
-      };
+      serviceConfig = lib.mkMerge [
+        { RuntimeDirectory = "k3s"; }
+        (lib.mkIf floatingIp.enable {
+          ExecStartPost = floatingIpStartCommands;
+          ExecStop = floatingIpStopCommands;
+        })
+      ];
     };
 
     environment.shellAliases = {
