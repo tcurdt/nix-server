@@ -1,10 +1,20 @@
 set quiet
 
 check:
-    nix flake check --all-systems
+    nix flake check --all-systems path:.
 
 update:
     nix flake update
 
-activate machine:
-    sudo nixos-rebuild switch --flake .#{{machine}} --option max-jobs 0 --option builders '' --option fallback false
+# local version
+build machine:
+    nix build --eval-store daemon --store ssh-ng://{{ machine }} --no-link .#nixosConfigurations.{{ machine }}.config.system.build.toplevel
+
+# local version (better disable comin)
+switch machine:
+    nix run --inputs-from . nixpkgs#nixos-rebuild -- switch --no-reexec --flake .#{{ machine }} --build-host {{ machine }} --target-host {{ machine }}
+
+# comin
+released machine:
+    ssh {{ machine }} \
+      "nixos-rebuild switch --flake github:tcurdt/nix-server#{{ machine }}"

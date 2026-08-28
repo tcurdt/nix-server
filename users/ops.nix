@@ -21,7 +21,9 @@ in
   };
 
   config = {
-    users.users.ops = (import ./default.nix { inherit pkgs; }) // {
+    users.users.ops = {
+      profile = import inputs.user.profile.tcurdt;
+      shell = pkgs.bash;
 
       openssh.authorizedKeys.keyFiles = cfg.keyFiles;
 
@@ -32,12 +34,6 @@ in
       ];
       hashedPassword = "*"; # no password allowed
 
-    };
-
-    home-manager.users.ops = {
-      imports = [ inputs.home.homeManagerModules.tcurdt ];
-      home.username = "ops";
-      home.homeDirectory = "/home/ops";
     };
   };
 }

@@ -4,7 +4,8 @@
   ...
 }:
 {
-  users.users.root = (import ./default.nix { inherit pkgs; }) // {
+  users.users.root = {
+    shell = pkgs.bash;
 
     openssh.authorizedKeys.keyFiles = [ ../keys/tcurdt.pub ];
 

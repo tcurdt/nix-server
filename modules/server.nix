@@ -1,13 +1,5 @@
 { lib, pkgs, ... }:
 {
-  imports = [
-  ];
-
-  programs.bash.enable = true;
-  security.sudo.wheelNeedsPassword = false;
-  security.sudo.execWheelOnly = true;
-  users.mutableUsers = false;
-
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
@@ -32,11 +24,9 @@
 
   zramSwap.enable = false;
   boot.tmp.cleanOnBoot = true;
-  boot.zfs.forceImportRoot = false;
 
   # kernel
 
-  # boot.kernelPackages = pkgs.linuxPackages_hardened; # linuxPackages_hardened has been removed due to lack of maintenance
   boot.kernelModules = [ "tcp_bbr" ];
 
   # boot.initrd.systemd.suppressedUnits = lib.mkIf config.systemd.enableEmergencyMode [
@@ -63,11 +53,6 @@
     "net.ipv4.icmp_echo_ignore_broadcasts" = 1;
     # ignore bad ICMP errors
     "net.ipv4.icmp_ignore_bogus_error_responses" = 1;
-    # reverse-path filter for spoof protection
-    # "net.ipv4.conf.default.rp_filter" = 1;
-    # "net.ipv4.conf.all.rp_filter" = 1;
-    "net.ipv4.conf.default.rp_filter" = 2;
-    "net.ipv4.conf.all.rp_filter" = 2;
     # SYN flood protection
     "net.ipv4.tcp_syncookies" = 1;
     # do not accept ICMP redirects (prevent MITM attacks)
@@ -90,7 +75,6 @@
     # requires >= 4.9 & kernel module
     "net.ipv4.tcp_congestion_control" = "bbr";
     # requires >= 4.19
-    # "net.core.default_qdisc" = "cake";
     "net.core.default_qdisc" = "fq";
     # note that inotify watches consume 1kB on 64-bit machines.
     # "fs.inotify.max_user_watches"   = 1048576;   # default:  8192
@@ -109,7 +93,6 @@
   # networking.enableIPv6 = false;
 
   networking.domain = lib.mkDefault "nixos";
-  networking.hostId = lib.mkDefault "feedfeed";
 
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
@@ -117,7 +100,6 @@
   networking.firewall.allowPing = true;
   networking.firewall.logRefusedConnections = false;
   # networking.firewall.trustedInterfaces = [ "docker0" ];
-
   services.fail2ban.enable = true;
 
   # networking.useDHCP = false;
@@ -158,8 +140,6 @@
 
   systemd = {
 
-    # services.sshd.wantedBy = pkgs.lib.mkForce ["multi-user.target"];
-
     network.wait-online.enable = false;
     services.NetworkManager-wait-online.enable = false;
     services.systemd-networkd.stopIfChanged = false;
@@ -192,7 +172,6 @@
       partOf = [ "cleanup-logs.service" ];
       timerConfig.OnCalendar = [
         "*-*-* 03:00:00" # daily at 3am
-        # "daily"
       ];
     };
 
@@ -224,13 +203,6 @@
     pkgs.nano
     pkgs.curl
     pkgs.gitMinimal
-    pkgs.just
-
-    # inputs.release-go.packages.${pkgs.system}.default
-    # (import ../scripts/foo.nix { inherit pkgs; })
-
-    # pkgs.vulnix # vulnerability scanner
-
   ];
 
   # environment.sessionVariables = {
@@ -260,5 +232,4 @@
       AuthenticationMethods publickey
     '';
   };
-
 }

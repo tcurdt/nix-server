@@ -5,7 +5,9 @@
   ...
 }:
 {
-  users.users.tcurdt = (import ./default.nix { inherit pkgs; }) // {
+  users.users.tcurdt = {
+    profile = import inputs.user.profile.tcurdt;
+    shell = pkgs.bash;
 
     openssh.authorizedKeys.keyFiles = [ ../keys/tcurdt.pub ];
 
@@ -17,11 +19,4 @@
     hashedPassword = "*"; # no password allowed
 
   };
-
-  home-manager.users.tcurdt = {
-    imports = [ inputs.home.homeManagerModules.tcurdt ];
-    home.username = "tcurdt";
-    home.homeDirectory = "/home/tcurdt";
-  };
-
 }
