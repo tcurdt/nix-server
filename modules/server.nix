@@ -4,6 +4,7 @@
     "nix-command"
     "flakes"
   ];
+  nix.channel.enable = false;
 
   time.timeZone = "UTC";
 

@@ -11,7 +11,7 @@
 
   imports = [
 
-    ../hardware/hetzner-efi.nix
+    ../hardware/hetzner-bios.nix
     ../modules/server.nix
     {
       # Strict filtering rejects packets unless their source is reachable through
@@ -29,8 +29,9 @@
     ../modules/users.nix
 
     ../users/root.nix
-    ../users/ops.nix
-    { ops.keyFiles = [ ../keys/tcurdt.pub ]; }
+    ../users/tcurdt.nix
+    # ../users/ops.nix
+    # { ops.keyFiles = [ ../keys/tcurdt.pub ]; }
 
     # { users.users.root.password = "secret"; }
     {
