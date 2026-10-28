@@ -29,6 +29,15 @@
 
       nixosConfigurations = {
 
+        app = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            ./machines/app.nix
+          ];
+        };
+
         # michael = nixpkgs.lib.nixosSystem {
         #   system = "x86_64-linux";
         #   specialArgs = { inherit inputs; };
