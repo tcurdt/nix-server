@@ -11,32 +11,16 @@
 
   imports = [
 
-    ../hardware/hetzner-bios.nix
+    ../hardware/hetzner-zfs-bios.nix
     ../modules/server.nix
-    {
-      # Strict filtering rejects packets unless their source is reachable through
-      # the receiving interface, providing spoof protection for conventional routing.
-      boot.kernel.sysctl = {
-        "net.ipv4.conf.default.rp_filter" = 1;
-        "net.ipv4.conf.all.rp_filter" = 1;
-      };
 
-      # ZFS records pool ownership with the host ID. Keep the shared value so ZFS
-      # data can move between these hosts without requiring a forced import.
-      networking.hostId = "feedfeed";
-      boot.zfs.forceImportRoot = false;
-    }
     ../modules/users.nix
-
     ../users/root.nix
     ../users/tcurdt.nix
-    # ../users/ops.nix
-    # { ops.keyFiles = [ ../keys/tcurdt.pub ]; }
-
     # { users.users.root.password = "secret"; }
     {
-      # nix run nixpkgs#mkpasswd -- -m sha-512
-      # su - root
+      # create: nix run nixpkgs#mkpasswd -- -m sha-512
+      # verify: su - root
       users.users.root.hashedPassword = "$6$/OBNw1chITrkLuVU$sZeOSyjQLGRdcm1DiOtKME8b9.odIJNlfXN8O/zQJL8uWYzUUYNmErApPc4eswfBDiFYHnrcpWuKpAFPZY99d1";
     }
 

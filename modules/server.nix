@@ -45,6 +45,9 @@
   #   "cifs"
   # ];
 
+  # networking.hostId = lib.mkDefault "feedfeed";
+  boot.zfs.forceImportRoot = lib.mkDefault false;
+
   # sysctl
   boot.kernel.sysctl = {
     "kernel.unprivileged_userns_clone" = 1;
@@ -68,6 +71,9 @@
     # do not accept IP source route packets (we are not a router)
     "net.ipv4.conf.all.accept_source_route" = 0;
     "net.ipv6.conf.all.accept_source_route" = 0;
+    # strict reverse path filtering (spoof protection), k3s modules relax this
+    "net.ipv4.conf.all.rp_filter" = lib.mkDefault 1;
+    "net.ipv4.conf.default.rp_filter" = lib.mkDefault 1;
     # protect against tcp time-wait assassination hazards
     "net.ipv4.tcp_rfc1337" = 1;
     # TCP Fast Open (TFO)

@@ -13,24 +13,11 @@
 
     ../hardware/contabo-ext.nix
     ../modules/server.nix
-    {
-      # Strict filtering rejects packets unless their source is reachable through
-      # the receiving interface, providing spoof protection for conventional routing.
-      boot.kernel.sysctl = {
-        "net.ipv4.conf.default.rp_filter" = 1;
-        "net.ipv4.conf.all.rp_filter" = 1;
-      };
 
-      # ZFS records pool ownership with the host ID. Keep the shared value so ZFS
-      # data can move between these hosts without requiring a forced import.
-      # networking.hostId = "feedfeed";
-      # boot.zfs.forceImportRoot = false;
-    }
     ../modules/users.nix
-
     ../users/root.nix
     ../users/tcurdt.nix
-
+    # { users.users.root.password = "secret"; }
     {
       # create: nix run nixpkgs#mkpasswd -- -m sha-512
       # verify: su - root

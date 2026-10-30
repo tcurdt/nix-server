@@ -103,6 +103,12 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # loose reverse path filtering, needed for the asymmetric routes of the flannel overlay
+    boot.kernel.sysctl = {
+      "net.ipv4.conf.all.rp_filter" = 2;
+      "net.ipv4.conf.default.rp_filter" = 2;
+    };
+
     networking.firewall.allowedTCPPorts = [
       6443 # required so that pods can reach the API server
       10250 # kubelet metrics endpoint for metrics-server
