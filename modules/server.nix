@@ -234,7 +234,7 @@
     extraConfig = ''
       IgnoreRhosts yes
       AllowTcpForwarding yes
-      AllowAgentForwarding yes
+      AllowAgentForwarding no
       AllowStreamLocalForwarding no
       AuthenticationMethods publickey
     '';
