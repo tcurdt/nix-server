@@ -210,6 +210,8 @@
     pkgs.nano
     pkgs.curl
     pkgs.gitMinimal
+    pkgs.openssl
+    pkgs.nvd
   ];
 
   # environment.sessionVariables = {

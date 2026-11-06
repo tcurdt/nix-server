@@ -21,8 +21,10 @@
     {
       # create: nix run nixpkgs#mkpasswd -- -m sha-512
       # verify: su - root
-      users.users.root.hashedPassword = "$6$/OBNw1chITrkLuVU$sZeOSyjQLGRdcm1DiOtKME8b9.odIJNlfXN8O/zQJL8uWYzUUYNmErApPc4eswfBDiFYHnrcpWuKpAFPZY99d1";
+      users.users.root.hashedPassword = "$6$Eozf9e/DlpROw8Jb$sfOqOMwgH9fp5hOtUysCTRNdcA1/twTZ8BzosZ3hp8.BGFZG3Ga2z3G3Yq6PWI8F3fpEzpDkNJ.g7ceysygS00";
     }
+
+    # ../modules/podman.nix
 
     # ../modules/mmdb.nix
     # ../modules/nginx.nix
@@ -36,6 +38,28 @@
     # ../modules/cache-oci.nix
     # ../modules/db-postgres.nix
   ];
+
+  #   services.my.podman = {
+  #     enable = true;
+  #     networks.app = { };
+  #   };
+  #
+  #   # both containers join the "app" network and reach each other by name,
+  #   # e.g. web -> http://api:80
+  #   virtualisation.oci-containers.containers = {
+  #
+  #     web = {
+  #       image = "docker.io/traefik/whoami:v1.9.0";
+  #       ports = [ "127.0.0.1:8080:80" ];
+  #       networks = [ "app" ];
+  #     };
+  #
+  #     api = {
+  #       image = "docker.io/traefik/whoami:v1.9.0";
+  #       networks = [ "app" ];
+  #     };
+  #
+  #   };
 
   #   services.my.mmdb = {
   #     enable = true;
