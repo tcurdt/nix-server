@@ -17,20 +17,21 @@
     ../modules/users.nix
     ../users/root.nix
     ../users/tcurdt.nix
-    # { users.users.root.password = "secret"; }
     {
       # create: nix run nixpkgs#mkpasswd -- -m sha-512
       # verify: su - root
       users.users.root.hashedPassword = "$6$Eozf9e/DlpROw8Jb$sfOqOMwgH9fp5hOtUysCTRNdcA1/twTZ8BzosZ3hp8.BGFZG3Ga2z3G3Yq6PWI8F3fpEzpDkNJ.g7ceysygS00";
     }
 
-    # ../modules/podman.nix
+    ../modules/caddy.nix
+    ../modules/oidc.nix
+    ../modules/headscale.nix
 
+    # ../modules/tailscale.nix
+
+    # ../modules/podman.nix
     # ../modules/mmdb.nix
     # ../modules/nginx.nix
-    # ../modules/tailscale.nix
-    # ../modules/headscale.nix
-    # ../modules/oidc.nix
     # ../modules/forgejo.nix
     # ../modules/ntfy.nix
     # ../modules/grafana.nix
@@ -38,6 +39,22 @@
     # ../modules/cache-oci.nix
     # ../modules/db-postgres.nix
   ];
+
+  services.my.caddy = {
+    enable = true;
+  };
+
+  services.my.headscale = {
+    server = "head.vafer.org";
+    domain = "tail.vafer.org";
+    oidc = {
+      issuer = "id.vafer.org";
+    };
+  };
+
+  services.my.oidc = {
+    server = "id.vafer.org";
+  };
 
   #   services.my.podman = {
   #     enable = true;
@@ -60,12 +77,7 @@
   #     };
   #
   #   };
-
   #   services.my.mmdb = {
-  #     enable = true;
-  #   };
-  #
-  #   services.my.nginx = {
   #     enable = true;
   #   };
   #
@@ -73,47 +85,29 @@
   #     enable = true;
   #     server = "head.vafer.org";
   #   };
-  #
-  #   services.my.headscale = {
-  #     server = "head.vafer.org";
-  #     domain = "tail.vafer.org";
-  #     oidc = {
-  #       issuer = "id.vafer.org";
-  #     };
-  #   };
-  #
-  #   services.my.oidc = {
-  #     server = "id.vafer.org";
-  #   };
-  #
   #   services.my.ntfy = {
   #     enable = true;
   #     server = "ntfy.vafer.org";
   #   };
-  #
   #   services.my.forgejo = {
   #     server = "git.vafer.org";
   #     oidc = {
   #       issuer = "id.vafer.org";
   #     };
   #   };
-  #
   #   services.my.grafana = {
   #     enable = true;
   #     oidc = {
   #       issuer = "id.vafer.org";
   #     };
   #   };
-  #
   #   services.my.cache-nix = {
   #     enable = true;
   #     server = "nix.vafer.org";
   #   };
-  #
   #   services.my.cache-oci = {
   #     enable = true;
   #   };
-  #
   #   services.my.postgres = {
   #     enable = true;
   #

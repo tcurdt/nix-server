@@ -73,12 +73,9 @@ in
       // cfg.extraSettings;
     };
 
-    services.my.nginx.virtualHosts.${cfg.server}.locations."/" = {
-      proxyPass = "http://${cfg.address}:${toString cfg.port}";
+    services.my.caddy.virtualHosts.${cfg.server} = {
       extraConfig = ''
-        proxy_busy_buffers_size 512k;
-        proxy_buffers 4 512k;
-        proxy_buffer_size 256k;
+        reverse_proxy http://${cfg.address}:${toString cfg.port}
       '';
     };
 

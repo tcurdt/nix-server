@@ -127,12 +127,12 @@ in
       // cfg.extraSettings;
     };
 
-    services.my.nginx.virtualHosts.${cfg.server}.locations."/" = {
-      proxyPass = "http://${config.services.headscale.address}:${toString config.services.headscale.port}";
-      proxyWebsockets = true;
+    services.my.caddy.virtualHosts.${cfg.server} = {
       extraConfig = ''
-        proxy_buffering off;
-        proxy_read_timeout 3600s;
+        reverse_proxy http://${config.services.headscale.address}:${toString config.services.headscale.port} {
+          header_up True-Client-IP {remote_host}
+          header_up X-Real-IP {remote_host}
+        }
       '';
     };
 
