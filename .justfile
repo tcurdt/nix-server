@@ -17,8 +17,3 @@ test machine:
 
 switch machine:
     nix run --inputs-from . nixpkgs#nixos-rebuild -- switch --no-reexec --flake .#{{ machine }} --build-host {{ machine }} --target-host {{ machine }}
-
-# comin
-release machine:
-    ssh {{ machine }} \
-      "nixos-rebuild switch --flake github:tcurdt/nix-server#{{ machine }}"
