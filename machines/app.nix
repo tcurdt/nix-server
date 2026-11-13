@@ -24,8 +24,8 @@
     }
 
     ../modules/caddy.nix
-    ../modules/oidc.nix
-    ../modules/headscale.nix
+    # ../modules/oidc.nix
+    # ../modules/headscale.nix
 
     # ../modules/tailscale.nix
 
@@ -44,17 +44,17 @@
     enable = true;
   };
 
-  services.my.headscale = {
-    server = "head.vafer.org";
-    domain = "tail.vafer.org";
-    oidc = {
-      issuer = "id.vafer.org";
-    };
-  };
-
-  services.my.oidc = {
-    server = "id.vafer.org";
-  };
+  #   services.my.headscale = {
+  #     server = "head.vafer.org";
+  #     domain = "tail.vafer.org";
+  #     oidc = {
+  #       issuer = "id.vafer.org";
+  #     };
+  #   };
+  #
+  #   services.my.oidc = {
+  #     server = "id.vafer.org";
+  #   };
 
   #   services.my.podman = {
   #     enable = true;
